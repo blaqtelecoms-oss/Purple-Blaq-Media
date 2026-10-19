@@ -1,0 +1,23 @@
+# Netlify deployment configuration for Purple Blaq Flow
+# Vite + React single-page application (Base44 app)
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NPM_FLAGS = "--no-audit --no-fund"
+
+# SPA fallback: serve index.html for all client-side routes so
+# react-router deep links work on refresh/direct visit.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Long-cache immutable built assets (Vite emits content-hashed filenames)
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

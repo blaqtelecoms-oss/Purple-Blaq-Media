@@ -1,0 +1,116 @@
+{
+  "name": "Project",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Project name"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "client",
+        "internal"
+      ],
+      "title": "Kind"
+    },
+    "client_id": {
+      "type": "string",
+      "title": "Client ID"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "Website",
+        "WebApp",
+        "Workflow System",
+        "Marketing",
+        "Branding",
+        "Other"
+      ],
+      "title": "Type"
+    },
+    "description": {
+      "type": "string",
+      "title": "Scope / description"
+    },
+    "image": {
+      "type": "string",
+      "title": "Project image (file URI)",
+      "format": "file"
+    },
+    "goals": {
+      "type": "string",
+      "title": "Goals (one per line)"
+    },
+    "tasks": {
+      "type": "array",
+      "title": "Tasks",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "done": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "budget": {
+      "type": "number",
+      "title": "Budget (ZAR)"
+    },
+    "spent": {
+      "type": "number",
+      "title": "Spent (ZAR)"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "Base44",
+        "GitHub"
+      ],
+      "title": "Platform"
+    },
+    "workspace_name": {
+      "type": "string",
+      "title": "Workspace name"
+    },
+    "app_url": {
+      "type": "string",
+      "title": "App URL"
+    },
+    "workspace_url": {
+      "type": "string",
+      "title": "Workspace URL (legacy)"
+    }
+  },
+  "required": [
+    "name",
+    "kind"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
