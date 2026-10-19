@@ -1,0 +1,57 @@
+{
+  "name": "TeamMember",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string",
+      "title": "Full name"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "title": "Email"
+    },
+    "job_title": {
+      "type": "string",
+      "title": "Job title"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "Admin",
+        "Development",
+        "Marketing",
+        "Finance",
+        "Support"
+      ],
+      "title": "Role"
+    }
+  },
+  "required": [
+    "full_name",
+    "email",
+    "role"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
