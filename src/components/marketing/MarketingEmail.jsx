@@ -154,7 +154,13 @@ export default function MarketingEmail({ data, reload }) {
             <div className="crm-empty">{folder === "Inbox" ? "No messages in your inbox." : "No sent messages yet."}</div>
           ) : list.map((m, i) => (
             <div key={m.id} onClick={() => openMessage(m, i)}
-              style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderTop: i === 0 ? 0 : "1px solid var(--line)", cursor: "pointer" }}>
+              style={{
+                display: "flex", alignItems: "center", gap: 12, padding: "10px 12px",
+                borderTop: i === 0 ? 0 : "1px solid var(--line)",
+                cursor: "pointer", borderRadius: 8,
+                background: current && m.id === current.id ? "color-mix(in srgb, var(--p) 10%, transparent)" : "transparent",
+                boxShadow: current && m.id === current.id ? "inset 3px 0 0 var(--p)" : "none",
+              }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <b>{folder === "Inbox" && !m.is_read ? "● " : ""}{(folder === "Inbox" ? m.from_email : m.to_email) || "—"}</b>
                 <div style={{ color: "var(--mut)", fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.subject || "(no subject)"}</div>
@@ -175,7 +181,15 @@ export default function MarketingEmail({ data, reload }) {
                 {folder === "Inbox" ? `From ${current.from_email}` : `To ${current.to_email}`} · {current.received_or_sent_at ? formatTime(current.received_or_sent_at) : ""}
               </p>
               {current.lead_id && <span className="crm-pill" style={{ marginTop: 8 }}>Linked to a lead</span>}
-              <p style={{ marginTop: 14, lineHeight: 1.6 }}>{current.text || current.html || "No message body."}</p>
+              {current.html ? (
+                <div
+                  className="crm-email-body"
+                  style={{ marginTop: 14, lineHeight: 1.6 }}
+                  dangerouslySetInnerHTML={{ __html: current.html }}
+                />
+              ) : (
+                <p style={{ marginTop: 14, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{current.text || "No message body."}</p>
+              )}
               {current.attachments && current.attachments.length > 0 && (
                 <p style={{ color: "var(--mut)", fontSize: 13 }}>{current.attachments.length} attachment(s)</p>
               )}
