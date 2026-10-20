@@ -41,26 +41,34 @@ Deno.serve(async (request: Request) => {
     const endDate = new Date().toISOString().slice(0, 10);
     const startDate = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
 
-    // Fetch top queries (keywords)
-    const queriesRes = await fetch(
-      `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`,
-      {
+    // Fetch top queries and top pages in parallel
+    const gHeaders = { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" };
+    const gUrl = `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`;
+
+    const [queriesRes, pagesRes] = await Promise.all([
+      fetch(gUrl, {
         method: "POST",
-        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          startDate,
-          endDate,
-          dimensions: ["query"],
-          rowLimit: 20,
-        }),
-      },
-    );
+        headers: gHeaders,
+        body: JSON.stringify({ startDate, endDate, dimensions: ["query"], rowLimit: 50 }),
+      }),
+      fetch(gUrl, {
+        method: "POST",
+        headers: gHeaders,
+        body: JSON.stringify({ startDate, endDate, dimensions: ["page"], rowLimit: 25 }),
+      }),
+    ]);
+
     if (!queriesRes.ok) {
       const err = await queriesRes.text();
       console.error("GSC queries failed:", queriesRes.status, err);
       return jsonResponse({ error: "Search Console API request failed." }, queriesRes.status);
     }
-    const queriesData = await queriesRes.json();
+
+    const [queriesData, pagesData] = await Promise.all([
+      queriesRes.json(),
+      pagesRes.json(),
+    ]);
+
     const topKeywords = (queriesData?.rows || []).map((r: Record<string, unknown>) => ({
       keyword: r.keys as string[],
       clicks: r.clicks as number,
@@ -69,21 +77,6 @@ Deno.serve(async (request: Request) => {
       position: Number(r.position as number).toFixed(1),
     }));
 
-    // Fetch top pages
-    const pagesRes = await fetch(
-      `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`,
-      {
-        method: "POST",
-        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          startDate,
-          endDate,
-          dimensions: ["page"],
-          rowLimit: 10,
-        }),
-      },
-    );
-    const pagesData = await pagesRes.json();
     const topPages = (pagesData?.rows || []).map((r: Record<string, unknown>) => ({
       page: r.keys as string[],
       clicks: r.clicks as number,

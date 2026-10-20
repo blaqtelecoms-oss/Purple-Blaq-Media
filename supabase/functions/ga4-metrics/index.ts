@@ -39,16 +39,14 @@ Deno.serve(async (request: Request) => {
     const body = await request.json().catch(() => ({}));
     const days = Math.min(Number(body?.days) || 30, 90);
     const startDate = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
+    const gHeaders = { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" };
+    const gUrl = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`;
 
-    // Fetch total visitors and sessions
-    const metricsRes = await fetch(
-      `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`,
-      {
+    // Fetch totals, top pages, and traffic sources in parallel
+    const [metricsRes, pagesRes, sourcesRes] = await Promise.all([
+      fetch(gUrl, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
+        headers: gHeaders,
         body: JSON.stringify({
           dateRanges: [{ startDate, endDate: "today" }],
           metrics: [
@@ -58,14 +56,43 @@ Deno.serve(async (request: Request) => {
             { name: "averageSessionDuration" },
           ],
         }),
-      },
-    );
+      }),
+      fetch(gUrl, {
+        method: "POST",
+        headers: gHeaders,
+        body: JSON.stringify({
+          dateRanges: [{ startDate, endDate: "today" }],
+          dimensions: [{ name: "pagePath" }],
+          metrics: [{ name: "screenPageViews" }, { name: "totalUsers" }],
+          orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
+          limit: 25,
+        }),
+      }),
+      fetch(gUrl, {
+        method: "POST",
+        headers: gHeaders,
+        body: JSON.stringify({
+          dateRanges: [{ startDate, endDate: "today" }],
+          dimensions: [{ name: "sessionMedium" }],
+          metrics: [{ name: "totalUsers" }, { name: "sessions" }],
+          orderBys: [{ metric: { metricName: "totalUsers" }, desc: true }],
+          limit: 25,
+        }),
+      }),
+    ]);
+
     if (!metricsRes.ok) {
       const err = await metricsRes.text();
       console.error("GA4 metrics failed:", metricsRes.status, err);
       return jsonResponse({ error: "GA4 API request failed." }, metricsRes.status);
     }
-    const metricsData = await metricsRes.json();
+
+    const [metricsData, pagesData, sourcesData] = await Promise.all([
+      metricsRes.json(),
+      pagesRes.json(),
+      sourcesRes.json(),
+    ]);
+
     const row = metricsData?.rows?.[0]?.metricValues || [];
     const totals = {
       visitors: Number(row[0]?.value || 0),
@@ -74,50 +101,12 @@ Deno.serve(async (request: Request) => {
       avgSessionDuration: Number(row[3]?.value || 0),
     };
 
-    // Fetch top pages
-    const pagesRes = await fetch(
-      `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          dateRanges: [{ startDate, endDate: "today" }],
-          dimensions: [{ name: "pagePath" }],
-          metrics: [{ name: "screenPageViews" }, { name: "totalUsers" }],
-          orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
-          limit: 10,
-        }),
-      },
-    );
-    const pagesData = await pagesRes.json();
     const topPages = (pagesData?.rows || []).map((r: Record<string, unknown>) => ({
       path: (r.dimensionValues as Record<string, string>[])?.[0]?.value || "",
       views: Number((r.metricValues as Record<string, string>[])?.[0]?.value || 0),
       visitors: Number((r.metricValues as Record<string, string>[])?.[1]?.value || 0),
     }));
 
-    // Fetch traffic sources
-    const sourcesRes = await fetch(
-      `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          dateRanges: [{ startDate, endDate: "today" }],
-          dimensions: [{ name: "sessionMedium" }],
-          metrics: [{ name: "totalUsers" }, { name: "sessions" }],
-          orderBys: [{ metric: { metricName: "totalUsers" }, desc: true }],
-          limit: 10,
-        }),
-      },
-    );
-    const sourcesData = await sourcesRes.json();
     const topSources = (sourcesData?.rows || []).map((r: Record<string, unknown>) => ({
       medium: (r.dimensionValues as Record<string, string>[])?.[0]?.value || "",
       visitors: Number((r.metricValues as Record<string, string>[])?.[0]?.value || 0),

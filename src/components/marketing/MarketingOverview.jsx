@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/utils/supabase";
 import { formatZAR } from "@/lib/crmConstants";
 import { statusPillClass } from "@/lib/marketingConstants";
@@ -14,6 +15,7 @@ function StatCard({ label, value, sub, subClass }) {
 }
 
 export default function MarketingOverview({ data }) {
+  const navigate = useNavigate();
   const leads = data.marketing_leads || [];
   const camps = data.campaigns || [];
   const content = (data.content_items || []).filter((c) => c.publish_date);
@@ -200,6 +202,11 @@ export default function MarketingOverview({ data }) {
               )}
               {!ga4 && <div style={{ color: "var(--mut)", fontSize: 13 }}>Connect GA4 for visit data.</div>}
               {!gsc && <div style={{ color: "var(--mut)", fontSize: 13 }}>Connect Search Console for keyword data.</div>}
+              <div style={{ marginTop: 14 }}>
+                <button className="crm-b" onClick={() => navigate("/admin/marketing/analytics")}>
+                  View more →
+                </button>
+              </div>
             </>
           )}
         </div>

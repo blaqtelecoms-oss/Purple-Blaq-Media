@@ -22,6 +22,7 @@ import CrmTeam from '@/pages/admin/Team';
 import CrmFinance from '@/pages/admin/Finance';
 import CrmSupport from '@/pages/admin/Support';
 import CrmMarketing from '@/pages/admin/Marketing';
+import MarketingAnalytics from '@/components/marketing/MarketingAnalytics';
 import NotFound from '@/pages/NotFound';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -76,6 +77,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/projects" element={<CrmProjects />} />
           <Route path="/admin/projects/:id" element={<CrmProjectDetail />} />
           <Route path="/admin/marketing" element={<CrmMarketing />} />
+          <Route path="/admin/marketing/analytics" element={<MarketingAnalytics />} />
           <Route path="/admin/team" element={<CrmTeam />} />
           <Route path="/admin/finance" element={<CrmFinance />} />
           <Route path="/admin/support" element={<CrmSupport />} />
