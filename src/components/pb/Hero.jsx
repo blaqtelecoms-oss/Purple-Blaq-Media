@@ -15,8 +15,8 @@ const SLIDES = [
     cta: { label: "Explore services", to: "/services" },
   },
   {
-    src: "https://images.unsplash.com/photo-1739298061740-5ed03045b280?auto=format&fit=crop&w=1600&q=80",
-    alt: "Black professionals collaborating around a table reviewing a workflow dashboard",
+    src: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1600&q=80",
+    alt: "Analytics dashboard with graphs and performance metrics on a laptop screen",
     audience: "For operations & admin teams",
     title: "One Dashboard for <em>Every Workflow</em>",
     message:
@@ -24,8 +24,8 @@ const SLIDES = [
     cta: { label: "See workflow systems", to: "/services" },
   },
   {
-    src: "https://images.unsplash.com/photo-1739303987830-ca19742b19bc?auto=format&fit=crop&w=1600&q=80",
-    alt: "Black business team collaborating with laptops as they grow",
+    src: "https://images.unsplash.com/photo-1603201667141-5a2d4c673378?auto=format&fit=crop&w=1600&q=80",
+    alt: "Team working together at desks with laptops in a modern office",
     audience: "For growing businesses",
     title: "Systems That <em>Scale With You</em>",
     message:
@@ -33,8 +33,8 @@ const SLIDES = [
     cta: { label: "See how we help", to: "/services" },
   },
   {
-    src: "https://images.unsplash.com/photo-1641759191629-cc107016e78a?auto=format&fit=crop&w=1600&q=80",
-    alt: "Black professionals reviewing documents and digitising a business process on a laptop",
+    src: "https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=1600&q=80",
+    alt: "Professional working at a keyboard digitising a business process on screen",
     audience: "For paper-heavy organisations",
     title: "From Paper to <em>Process</em>",
     message:
