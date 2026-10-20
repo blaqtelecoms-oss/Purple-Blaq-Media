@@ -19,8 +19,10 @@ export default function MarketingAnalytics() {
   const [error, setError] = useState("");
   const [days, setDays] = useState(30);
 
-  const ga4 = integrations.find((i) => i.key === "ga4" && i.status === "connected");
-  const gsc = integrations.find((i) => i.key === "gsc" && i.status === "connected");
+  // Google integrations are all driven by a single "google" OAuth connection.
+  const googleConn = integrations.find((i) => i.key === "google" && i.status === "connected");
+  const ga4 = googleConn;
+  const gsc = googleConn;
 
   useEffect(() => {
     (async () => {
@@ -50,9 +52,19 @@ export default function MarketingAnalytics() {
           .then(async (r) => ({ ok: r.ok, data: await r.json() })).catch(() => null)
       );
       const results = await Promise.all(tasks);
+      const errs = [];
       let idx = 0;
-      if (ga4) { if (results[idx]?.ok && results[idx].data?.ok) setGa4Data(results[idx].data); idx++; }
-      if (gsc) { if (results[idx]?.ok && results[idx].data?.ok) setGscData(results[idx].data); }
+      if (ga4) {
+        const r = results[idx]; idx++;
+        if (r?.ok && r.data?.ok) setGa4Data(r.data);
+        else errs.push(r?.data?.error || "GA4 metrics request failed.");
+      }
+      if (gsc) {
+        const r = results[idx];
+        if (r?.ok && r.data?.ok) setGscData(r.data);
+        else errs.push(r?.data?.error || "Search Console request failed.");
+      }
+      if (errs.length) setError(errs.join(" "));
     } catch (err) {
       setError(err.message || "Could not load analytics.");
     } finally {
@@ -87,7 +99,7 @@ export default function MarketingAnalytics() {
 
       {error && <p role="alert" className="crm-field-err">{error}</p>}
 
-      {!ga4 && !gsc && !loading && (
+      {!googleConn && !loading && (
         <div className="crm-empty">
           Connect Google Analytics or Search Console on the Integrations tab to see analytics data.
         </div>
@@ -95,7 +107,7 @@ export default function MarketingAnalytics() {
 
       {loading && <div className="crm-loading"><div className="crm-spinner" /></div>}
 
-      {!loading && (ga4 || gsc) && !ga4Data && !gscData && !error && (
+      {!loading && googleConn && !ga4Data && !gscData && !error && (
         <div className="crm-empty">No data returned. Check that your Google integrations are authorised.</div>
       )}
 
