@@ -1,5 +1,5 @@
 const ASSET =
-  "https://media.base44.com/images/public/6ac499d8504167d4dac67bfa/4143cb5f3_generated_52280b84.png";
+  "/assets/media/4143cb5f3_generated_52280b84.png";
 
 const QUADRANTS = {
   "Workflow Systems": {

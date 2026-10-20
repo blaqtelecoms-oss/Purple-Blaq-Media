@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { deleteRecord, getRecord, listRecords, updateRecord } from "@/api/data";
 import { useCrm } from "@/lib/CrmContext";
 import { formatZAR, projectProgress, canAccess, canEditProjects } from "@/lib/crmConstants";
 import ConfirmDialog from "@/components/crm/ConfirmDialog";
@@ -16,18 +16,22 @@ export default function ProjectDetail() {
   const [toggling, setToggling] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [loadError, setLoadError] = useState("");
 
   const load = useCallback(async () => {
     try {
       const [p, c] = await Promise.all([
-        base44.entities.Project.get(id),
-        base44.entities.Client.list(),
+        getRecord("projects", id),
+        listRecords("clients"),
       ]);
       setProject(p);
       setSpent(p.spent || 0);
       setClients(c);
-    } catch {
-      setNotFound(true);
+      setNotFound(false);
+      setLoadError("");
+    } catch (error) {
+      if (error.code === "PGRST116") setNotFound(true);
+      else setLoadError(error.message || "Could not load the project.");
     }
   }, [id]);
 
@@ -47,10 +51,10 @@ export default function ProjectDetail() {
     setToggling(idx);
     try {
       const tasks = project.tasks.map((t, i) => (i === idx ? { ...t, done: !t.done } : t));
-      await base44.entities.Project.update(project.id, { tasks });
+      await updateRecord("projects", project.id, { tasks });
       await load();
-    } catch {
-      /* ignore */
+    } catch (error) {
+      setLoadError(error.message || "Could not update the task.");
     } finally {
       setToggling(null);
     }
@@ -59,10 +63,10 @@ export default function ProjectDetail() {
   const saveSpent = async () => {
     setSavingSpent(true);
     try {
-      await base44.entities.Project.update(project.id, { spent: Number(spent) || 0 });
+      await updateRecord("projects", project.id, { spent: Number(spent) || 0 });
       await load();
-    } catch {
-      /* ignore */
+    } catch (error) {
+      setLoadError(error.message || "Could not update project spending.");
     } finally {
       setSavingSpent(false);
     }
@@ -70,10 +74,10 @@ export default function ProjectDetail() {
 
   const handleDelete = async () => {
     try {
-      await base44.entities.Project.delete(project.id);
+      await deleteRecord("projects", project.id);
       navigate("/admin/projects");
-    } catch {
-      /* ignore */
+    } catch (error) {
+      setLoadError(error.message || "Could not delete the project.");
     }
   };
 
@@ -88,6 +92,7 @@ export default function ProjectDetail() {
   return (
     <>
       <div className="pbp-detail">
+        {loadError && <p role="alert" className="crm-field-err">{loadError}</p>}
         <div className="pbp-dh">
           <span className="pbp-pill">
             {project.kind === "client" ? clientName(project.client_id) : "Internal"} · {project.type}

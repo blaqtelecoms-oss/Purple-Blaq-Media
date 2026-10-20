@@ -1,9 +1,19 @@
 import { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/utils/supabase";
 
 const MAX_SIZE = 10 * 1024 * 1024;
 
-export default function FileUpload({ label, accept = "image/*", value, onChange, onError }) {
+/**
+ * @param {{ label: string, accept?: string, value?: string | null, onChange: (path: string) => void, onError?: (message: string) => void, bucketName?: string }} props
+ */
+export default function FileUpload({
+  label,
+  accept = "image/*",
+  value,
+  onChange,
+  onError,
+  bucketName = "crm-files",
+}) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
 
@@ -19,8 +29,16 @@ export default function FileUpload({ label, accept = "image/*", value, onChange,
     }
     setUploading(true);
     try {
-      const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
-      onChange(file_uri);
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!user) throw new Error("Sign in before uploading files.");
+      const filename = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = `${user.id}/${crypto.randomUUID()}-${filename}`;
+      const { data, error: uploadError } = await supabase.storage
+        .from(bucketName)
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (uploadError) throw uploadError;
+      onChange(data.path);
     } catch (err) {
       const msg = err?.message || "Upload failed.";
       setError(msg);

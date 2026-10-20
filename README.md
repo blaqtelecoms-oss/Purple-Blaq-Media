@@ -1,62 +1,60 @@
-# Base44 Project
+# Purple Blaq Media
 
-Use this repository to run and edit the app locally, then publish changes back through Base44.
+React application using Supabase for authentication, PostgreSQL data, private file storage, and Edge Functions.
 
-Any change pushed to the repo will also be reflected in the Base44 Builder.
+## Local development
 
-## Prerequisites
+1. Install dependencies with `npm install`.
+2. Copy `.env.example` to `.env.local` and set the public Supabase URL and publishable key.
+3. Start the Supabase local stack with `npx supabase start` (Docker is required).
+4. Apply local migrations and start Vite:
 
-1. Clone the repository using the project's Git URL.
-2. Navigate to the project directory.
-3. Install dependencies: `npm install`.
-4. Install the Base44 CLI: `npm install -g base44@latest`.
-5. Install [Deno](https://docs.deno.com/runtime/getting_started/installation/) — the local Base44 backend runs on it.
+   ```bash
+   npx supabase migration up
+   npm run dev
+   ```
 
-Run `base44 --help` (or see the [CLI reference](https://docs.base44.com/developers/references/cli/commands/introduction)) for the full command surface.
+5. Configure authentication redirect URLs in Supabase for the local and deployed site origins. Enable email confirmation. Configure Google OAuth only if social sign-in is required.
 
-## Run Locally
+## Supabase deployment
 
-Three commands, from the project root:
-
-```bash
-base44 login   # one-time per machine
-base44 link    # one-time per clone
-base44 dev     # local backend + frontend together
-```
-
-Open the frontend URL that `base44 dev` prints (typically `http://localhost:5173`).
-
-Notes:
-
-- **Every fresh clone needs `base44 link`.** It writes `base44/.app.jsonc` (the app-id pointer), which is deliberately gitignored. Your app id is in the Builder URL (`app.base44.com/apps/<id>/...`); `base44 link --help` shows the non-interactive flags.
-- **`base44 dev` runs the frontend for you** (via `site.serveCommand` in this repo's `base44/config.jsonc`) — never run `npm run dev` yourself: alone it serves a UI with no backend behind it (`[base44] Proxy not enabled`, every `/api` call fails), and alongside `base44 dev` the second Vite silently takes the next port and you end up looking at the wrong one.
-- **The app must be published at least once for the UI to load under `base44 dev`.** The frontend boots by fetching app settings from the hosted app; before the first publish that fails and every page redirects to login. The local API works regardless.
-- Entities, functions, and auth run locally — entity data is **in-memory only**, wiped when `base44 dev` restarts. Everything else (Core integrations, OAuth login) is forwarded to your deployed app. Full breakdown: [Local development overview](https://docs.base44.com/developers/backend/overview/local-dev/local-development-overview).
-
-## Frontend Only, Hosted Backend
-
-To work on just the frontend against your app's live hosted backend:
+Link the CLI to the intended Supabase project, review the pending migrations, then apply them:
 
 ```bash
-base44 dev --remote
+npx supabase link --project-ref <project-ref>
+npx supabase migration list
+npx supabase db push
 ```
 
-⚠️ In this mode writes go to your app's **production data** — plain `base44 dev` keeps everything local.
-
-## Publish Your Changes
-
-After pushing your changes to git, open the Base44 dashboard and publish the app:
+Deploy the Edge Functions after setting their required secrets:
 
 ```bash
-base44 dashboard open
+npx supabase secrets set APP_URL=https://<site-domain>
+npx supabase secrets set RESEND_API_KEY=<resend-key> CONTACT_FROM_EMAIL="<verified-sender>"
+npx supabase functions deploy website-contact
+npx supabase functions deploy invite-team-member
+npx supabase functions deploy migrate-enquiries
 ```
 
-This repo syncs to Base44 through git, so publish from the dashboard rather than `base44 deploy` — a CLI deploy ships your local tree directly, bypassing the sync, and the deployed state silently diverges from the repo.
+`CONTACT_NOTIFICATION_EMAIL` is optional and defaults to the site's published contact address. Email delivery is best-effort; submitted enquiries are saved even if the mail provider is unavailable. The service-role key must remain in Supabase Edge Function secrets or a trusted migration environment; never expose it as a `VITE_` variable.
 
-## Docs & Support
+The initial database migration provisions the private `crm-files` Storage bucket for CRM files and the Admin team record for `edusoft.linda@gmail.com`. Project image uploads and company logos use separate private `project-images` and `company-logos` buckets, provisioned by migrations. Apply pending Storage and database changes with `npx supabase db push` after linking the CLI to the intended project. The user must create or accept their Supabase Auth account with that email and verify it before `/admin` access is available. Passwords are set by the user through the Supabase invite or reset flow, not stored in source.
 
-GitHub integration: [https://docs.base44.com/developers/app-code/local-development/github](https://docs.base44.com/developers/app-code/local-development/github)
+## Data import
 
-Local development: [https://docs.base44.com/developers/backend/overview/local-dev/local-development-overview](https://docs.base44.com/developers/backend/overview/local-dev/local-development-overview)
+The application repository contains the public media files currently referenced by the UI. To import exported records, prepare a JSON object with arrays named `clients`, `enquiries`, `projects`, `support_tickets`, `team_members`, and `transactions`, then run:
 
-Support: [https://app.base44.com/support](https://app.base44.com/support)
+```bash
+SUPABASE_URL=<project-url> SUPABASE_SERVICE_ROLE_KEY=<service-role-key> \
+  node scripts/import-legacy-data.mjs <export.json>
+```
+
+The importer preserves record IDs and original row data for auditing. Referenced media must either be present in `public/assets/media` or be migrated to Supabase Storage before importing; the importer rejects unresolved file references. Auth accounts are not imported, so users must be invited or sign up again and reset their passwords.
+
+## Checks
+
+```bash
+npm run lint
+npm run typecheck
+npm run build
+```

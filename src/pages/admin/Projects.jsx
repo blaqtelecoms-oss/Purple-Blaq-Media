@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { createRecord, listRecords } from "@/api/data";
 import { useCrm } from "@/lib/CrmContext";
 import { formatZAR, projectProgress, canAccess, canEditProjects, PROJECT_TYPES } from "@/lib/crmConstants";
 import Modal, { ModalField, inputClass } from "@/components/crm/Modal";
 import FileUpload from "@/components/crm/FileUpload";
 import { SignedImage } from "@/components/crm/SignedFile";
 
-const HERO_BG = "https://media.base44.com/images/public/6ac499d8504167d4dac67bfa/51eafadb2_generated_b34084e8.jpg";
+const HERO_BG = "/assets/media/51eafadb2_generated_b34084e8.jpg";
 
 export default function Projects() {
   const { member } = useCrm();
@@ -20,18 +20,21 @@ export default function Projects() {
   const [addKind, setAddKind] = useState("client");
   const [form, setForm] = useState({});
   const [errors, setErrors] = useState({});
+  const [loadError, setLoadError] = useState("");
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     try {
       const [p, c] = await Promise.all([
-        base44.entities.Project.list(),
-        base44.entities.Client.list(),
+        listRecords("projects"),
+        listRecords("clients"),
       ]);
       setProjects(p);
       setClients(c);
-    } catch {
+      setLoadError("");
+    } catch (error) {
       setProjects([]);
+      setLoadError(error.message || "Could not load projects.");
     }
   }, []);
 
@@ -69,7 +72,7 @@ export default function Projects() {
         .split("\n")
         .filter((x) => x.trim())
         .map((x) => ({ title: x.trim(), done: false }));
-      await base44.entities.Project.create({
+      await createRecord("projects", {
         name: form.name,
         kind: addKind,
         client_id: addKind === "client" ? form.client_id : "",
@@ -117,6 +120,7 @@ export default function Projects() {
           </button>
         ))}
       </div>
+      {loadError && <p role="alert" className="crm-field-err">{loadError}</p>}
 
       {filtered.length === 0 ? (
         <div className="pbp-empty">No projects yet, add your first project.</div>
@@ -132,7 +136,7 @@ export default function Projects() {
               onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && navigate(`/admin/projects/${p.id}`)}
             >
               <div className="pbp-th">
-                {p.image && <SignedImage fileUri={p.image} alt={p.name} className="" />}
+                {p.image && <SignedImage fileUri={p.image} alt={p.name} className="" bucketName="project-images" fallbackBucketName="crm-files" />}
               </div>
               <div className="pbp-pills">
                 <span className="pbp-pill">{p.type}</span>
@@ -206,7 +210,7 @@ export default function Projects() {
           <ModalField label="Scope / description">
             <textarea className={inputClass} rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           </ModalField>
-          <FileUpload label="Project image" accept="image/*" value={form.image} onChange={(v) => setForm({ ...form, image: v })} />
+          <FileUpload label="Project image" accept="image/*" value={form.image} onChange={(v) => setForm({ ...form, image: v })} bucketName="project-images" />
           <ModalField label="Goals (one per line)">
             <textarea className={inputClass} rows={3} value={form.goals} onChange={(e) => setForm({ ...form, goals: e.target.value })} />
           </ModalField>
@@ -219,15 +223,16 @@ export default function Projects() {
           <ModalField label="Platform">
             <select className={inputClass} value={form.platform} onChange={(e) => setForm({ ...form, platform: e.target.value })}>
               <option value="">Select a platform…</option>
-              <option value="Base44">Base44</option>
+              <option value="Supabase">Supabase</option>
               <option value="GitHub">GitHub</option>
+              <option value="Other">Other</option>
             </select>
           </ModalField>
           <ModalField label="Workspace name">
             <input className={inputClass} value={form.workspace_name} onChange={(e) => setForm({ ...form, workspace_name: e.target.value })} placeholder="e.g. my-team" />
           </ModalField>
           <ModalField label="App URL">
-            <input className={inputClass} type="url" value={form.app_url} onChange={(e) => setForm({ ...form, app_url: e.target.value })} placeholder="https://my-app.base44.app" />
+            <input className={inputClass} type="url" value={form.app_url} onChange={(e) => setForm({ ...form, app_url: e.target.value })} placeholder="https://your-app.example.com" />
           </ModalField>
           {errors.submit && <span className="crm-field-err">{errors.submit}</span>}
         </Modal>

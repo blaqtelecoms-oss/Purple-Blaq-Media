@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { createRecord, deleteRecord, listRecords } from "@/api/data";
 import { useCrm } from "@/lib/CrmContext";
 import { formatZAR, formatDate, canAccess, canEditFinance } from "@/lib/crmConstants";
 import CrmPageHeader from "@/components/crm/CrmPageHeader";
@@ -34,18 +34,21 @@ export default function Finance() {
   const [deleteId, setDeleteId] = useState(null);
   const [form, setForm] = useState({ type: "in", date: "", description: "", category: "", client_id: "", amount: 0, status: "Paid", invoice: "" });
   const [errors, setErrors] = useState({});
+  const [loadError, setLoadError] = useState("");
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     try {
       const [t, c] = await Promise.all([
-        base44.entities.Transaction.list(),
-        base44.entities.Client.list(),
+        listRecords("transactions"),
+        listRecords("clients"),
       ]);
       setTx(t);
       setClients(c);
-    } catch {
+      setLoadError("");
+    } catch (error) {
       setTx([]);
+      setLoadError(error.message || "Could not load finance data.");
     }
   }, []);
 
@@ -74,7 +77,7 @@ export default function Finance() {
     if (!validate()) return;
     setSaving(true);
     try {
-      await base44.entities.Transaction.create({
+      await createRecord("transactions", {
         ...form,
         amount: Number(form.amount) || 0,
         client_id: form.client_id || "",
@@ -91,11 +94,11 @@ export default function Finance() {
 
   const handleDelete = async () => {
     try {
-      await base44.entities.Transaction.delete(deleteId);
+      await deleteRecord("transactions", deleteId);
       setDeleteId(null);
       await load();
-    } catch {
-      /* ignore */
+    } catch (error) {
+      setLoadError(error.message || "Could not delete the transaction.");
     }
   };
 
@@ -144,6 +147,7 @@ export default function Finance() {
         actionLabel="+ Add transaction"
         onAction={() => setShowAdd(true)}
       />
+      {loadError && <p role="alert" className="crm-field-err">{loadError}</p>}
       <div className="crm-grid crm-k4" style={{ marginBottom: 18 }}>
         <div className="crm-card crm-card--h crm-kpi"><small>Income</small><b className="up">{formatZAR(inc)}</b><span>Paid</span></div>
         <div className="crm-card crm-card--h crm-kpi"><small>Expenses</small><b className="dn">{formatZAR(exp)}</b><span>Paid</span></div>

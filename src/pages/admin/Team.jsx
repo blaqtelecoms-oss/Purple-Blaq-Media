@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { deleteRecord, listRecords, updateRecord } from "@/api/data";
+import { supabase } from "@/utils/supabase";
 import { useCrm } from "@/lib/CrmContext";
 import { ROLES, initials, canAccess, canManageTeam } from "@/lib/crmConstants";
 import CrmPageHeader from "@/components/crm/CrmPageHeader";
@@ -16,13 +17,16 @@ export default function Team() {
   const [deleteId, setDeleteId] = useState(null);
   const [form, setForm] = useState({ full_name: "", email: "", job_title: "", role: "Development" });
   const [errors, setErrors] = useState({});
+  const [loadError, setLoadError] = useState("");
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      setTeam(await base44.entities.TeamMember.list());
-    } catch {
+      setTeam(await listRecords("team_members"));
+      setLoadError("");
+    } catch (error) {
       setTeam([]);
+      setLoadError(error.message || "Could not load team members.");
     }
   }, []);
 
@@ -39,10 +43,10 @@ export default function Team() {
 
   const changeRole = async (id, role) => {
     try {
-      await base44.entities.TeamMember.update(id, { role });
+      await updateRecord("team_members", id, { role });
       await load();
-    } catch {
-      /* ignore */
+    } catch (error) {
+      setLoadError(error.message || "Could not update the team role.");
     }
   };
 
@@ -59,12 +63,10 @@ export default function Team() {
     if (!validate()) return;
     setSaving(true);
     try {
-      await base44.entities.TeamMember.create(form);
-      try {
-        await base44.users.inviteUser(form.email, "admin");
-      } catch {
-        /* user may already exist */
-      }
+      const { error } = await supabase.functions.invoke("invite-team-member", {
+        body: { ...form, email: form.email.toLowerCase() },
+      });
+      if (error) throw error;
       setShowAdd(false);
       setForm({ full_name: "", email: "", job_title: "", role: "Development" });
       await load();
@@ -82,11 +84,11 @@ export default function Team() {
       return;
     }
     try {
-      await base44.entities.TeamMember.delete(deleteId);
+      await deleteRecord("team_members", deleteId);
       setDeleteId(null);
       await load();
-    } catch {
-      /* ignore */
+    } catch (error) {
+      setLoadError(error.message || "Could not remove the team member.");
     }
   };
 
@@ -103,6 +105,7 @@ export default function Team() {
         actionLabel="+ Add member"
         onAction={() => setShowAdd(true)}
       />
+      {loadError && <p role="alert" className="crm-field-err">{loadError}</p>}
       <div className="crm-chips">
         {["All", ...ROLES].map((x) => (
           <button key={x} className={filter === x ? "on" : ""} onClick={() => setFilter(x)}>

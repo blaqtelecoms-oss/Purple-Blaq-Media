@@ -730,6 +730,8 @@ footer.pb-footer .pb-bar {
   background: #fff; border: 1px solid var(--line); border-radius: 20px; overflow: hidden;
   transition: transform 0.4s cubic-bezier(.2,.7,.2,1), box-shadow 0.4s, border-color 0.4s;
 }
+.pb-team-link { display: block; height: 100%; color: inherit; text-decoration: none; }
+.pb-team-link:focus-visible { outline: 3px solid var(--p); outline-offset: -3px; }
 .pb-team-card:hover {
   transform: translateY(-12px) scale(1.025);
   box-shadow: 0 36px 64px -28px rgba(90,26,140,.5);
@@ -737,6 +739,7 @@ footer.pb-footer .pb-bar {
 }
 .pb-team-img { aspect-ratio: 1 / 1; overflow: hidden; background: var(--soft); }
 .pb-team-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; }
+.pb-team-img--fallback { display: grid; place-items: center; color: var(--p); font-size: clamp(48px, 8vw, 96px); font-weight: 800; }
 .pb-team-card:hover .pb-team-img img { transform: scale(1.08); }
 .pb-team-card h3 { margin: 16px 18px 4px; font-size: 16px; }
 .pb-team-card span { display: block; margin: 0 18px 18px; color: var(--p2); font-size: 12.5px; font-weight: 600; letter-spacing: .02em; }

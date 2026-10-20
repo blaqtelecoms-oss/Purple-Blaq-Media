@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { listRecords, updateRecord } from "@/api/data";
 import { useSeo } from "@/hooks/useSeo";
 import { LOGO_URL } from "@/lib/pbConstants";
 
@@ -22,7 +22,7 @@ export default function AdminEnquiries() {
   const load = async () => {
     setLoading(true);
     try {
-      const list = await base44.entities.Enquiry.list("-created_date", 200);
+      const list = await listRecords("enquiries", { orderBy: "created_date", ascending: false, limit: 200 });
       setItems(list);
     } catch (e) {
       setError(e?.message || "Failed to load enquiries.");
@@ -37,7 +37,7 @@ export default function AdminEnquiries() {
 
   const changeStatus = async (id, status) => {
     try {
-      await base44.entities.Enquiry.update(id, { status });
+      await updateRecord("enquiries", id, { status });
       setItems((arr) => arr.map((it) => (it.id === id ? { ...it, status } : it)));
     } catch (e) {
       setError(e?.message || "Failed to update status.");

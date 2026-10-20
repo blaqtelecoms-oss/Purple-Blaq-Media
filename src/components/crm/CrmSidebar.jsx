@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useCrm } from "@/lib/CrmContext";
-import { base44 } from "@/api/base44Client";
+import { listRecords } from "@/api/data";
+import { useAuth } from "@/lib/AuthContext";
 import { LOGO_URL } from "@/lib/pbConstants";
 import { canAccess, initials } from "@/lib/crmConstants";
 
@@ -25,15 +26,17 @@ const NAV = [
 
 export default function CrmSidebar() {
   const { member } = useCrm();
+  const { logout } = useAuth();
   const navigate = useNavigate();
   const [openCount, setOpenCount] = useState(0);
 
   const loadOpenCount = async () => {
+    if (!canAccess(member?.role, "support")) return;
     try {
-      const tickets = await base44.entities.SupportTicket.filter({ status: "Open" });
+      const tickets = await listRecords("support_tickets", { filters: { status: "Open" } });
       setOpenCount(tickets.length);
-    } catch {
-      /* ignore */
+    } catch (error) {
+      console.error("Could not load the open ticket count:", error);
     }
   };
 
@@ -41,10 +44,12 @@ export default function CrmSidebar() {
     loadOpenCount();
     const interval = setInterval(loadOpenCount, 15000);
     return () => clearInterval(interval);
-  }, []);
+  }, [member]);
 
   const handleLogout = () => {
-    base44.auth.logout("/login");
+    logout().then(() => navigate("/login")).catch((error) => {
+      console.error("Sign-out failed:", error);
+    });
   };
 
   const visibleNav = NAV.filter((n) => canAccess(member?.role, n.route));

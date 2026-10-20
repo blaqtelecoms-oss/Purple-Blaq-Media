@@ -1,7 +1,7 @@
 import Reveal from "@/components/pb/Reveal";
 
 const HEADER_BG =
-  "https://media.base44.com/images/public/6ac499d8504167d4dac67bfa/5d7ba2cf2_generated_485b497a.png";
+  "/assets/media/5d7ba2cf2_generated_485b497a.png";
 
 export default function PageHeader({ eyebrow, title, lead }) {
   // title may contain <em>...</em> markup; render with dangerouslySetInnerHTML

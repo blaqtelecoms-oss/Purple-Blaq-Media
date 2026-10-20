@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { listRecords } from "@/api/data";
 import { useCrm } from "@/lib/CrmContext";
-import { formatZAR, projectProgress, initials, formatDate, formatTime, canAccess } from "@/lib/crmConstants";
+import { formatZAR, projectProgress, initials, formatDate, canAccess } from "@/lib/crmConstants";
 import CrmPageHeader from "@/components/crm/CrmPageHeader";
 
 export default function Dashboard() {
@@ -10,22 +10,26 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   const load = useCallback(async () => {
     try {
       const [clients, tx, projects, tickets] = await Promise.all([
-        base44.entities.Client.list(),
-        base44.entities.Transaction.list(),
-        base44.entities.Project.list(),
-        base44.entities.SupportTicket.list("-created_date", 10),
+        canAccess(member.role, "clients") ? listRecords("clients") : [],
+        canAccess(member.role, "finance") ? listRecords("transactions") : [],
+        canAccess(member.role, "projects") ? listRecords("projects") : [],
+        canAccess(member.role, "support")
+          ? listRecords("support_tickets", { orderBy: "created_date", ascending: false, limit: 10 })
+          : [],
       ]);
       setData({ clients, tx, projects, tickets });
-    } catch {
-      /* ignore */
+      setLoadError("");
+    } catch (error) {
+      setLoadError(error.message || "Could not load dashboard data.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [member]);
 
   useEffect(() => {
     if (!member) return;
@@ -37,8 +41,12 @@ export default function Dashboard() {
   }, [member, navigate, load]);
 
   if (loading) return <div className="crm-loading"><div className="crm-spinner" /></div>;
-  if (!data) return <div className="crm-empty">Unable to load dashboard.</div>;
+  if (!data) return <div className="crm-empty" role="alert">{loadError || "Unable to load dashboard."}</div>;
 
+  const canViewClients = canAccess(member?.role, "clients");
+  const canViewFinance = canAccess(member?.role, "finance");
+  const canViewProjects = canAccess(member?.role, "projects");
+  const canViewSupport = canAccess(member?.role, "support");
   const inc = data.tx.filter((t) => t.type === "in" && t.status === "Paid");
   const rev = inc.reduce((a, t) => a + t.amount, 0);
   const exp = data.tx.filter((t) => t.type === "out" && t.status === "Paid").reduce((a, t) => a + t.amount, 0);
@@ -61,14 +69,14 @@ export default function Dashboard() {
     <>
       <CrmPageHeader title="Business" em="overview" />
       <div className="crm-grid crm-k4">
-        <Kpi label="Total clients" value={data.clients.length} sub="+1 this quarter" cls="up" />
-        <Kpi label="Revenue (paid)" value={formatZAR(rev)} sub={"Expenses " + formatZAR(exp)} cls="" />
-        <Kpi label="Outstanding invoices" value={formatZAR(out)} sub="Awaiting payment" cls="dn" />
-        <Kpi label="Active projects" value={active} sub={done + " completed"} cls="up" />
+        {canViewClients && <Kpi label="Total clients" value={data.clients.length} sub="+1 this quarter" cls="up" />}
+        {canViewFinance && <Kpi label="Revenue (paid)" value={formatZAR(rev)} sub={"Expenses " + formatZAR(exp)} cls="" />}
+        {canViewFinance && <Kpi label="Outstanding invoices" value={formatZAR(out)} sub="Awaiting payment" cls="dn" />}
+        {canViewProjects && <Kpi label="Active projects" value={active} sub={done + " completed"} cls="up" />}
       </div>
 
       <div className="crm-grid crm-k2" style={{ marginTop: 18 }}>
-        <div className="crm-card">
+        {canViewFinance && <div className="crm-card">
           <h3>Revenue, last 6 months</h3>
           <div className="crm-bars">
             {monthData.map((v, i) => (
@@ -78,8 +86,8 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-        </div>
-        <div className="crm-card">
+        </div>}
+        {canViewProjects && <div className="crm-card">
           <h3>Project delivery</h3>
           <div className="crm-row">
             <div className="crm-ring" style={{ background: `conic-gradient(var(--p) ${pc * 3.6}deg, var(--soft) 0)` }}>
@@ -97,11 +105,11 @@ export default function Dashboard() {
               {data.projects.length === 0 && <small style={{ color: "var(--mut)" }}>No projects yet</small>}
             </div>
           </div>
-        </div>
+        </div>}
       </div>
 
       <div className="crm-grid crm-k2" style={{ marginTop: 18 }}>
-        <div className="crm-card">
+        {canViewFinance && <div className="crm-card">
           <h3>Latest transactions</h3>
           {data.tx.length === 0 ? (
             <small style={{ color: "var(--mut)" }}>No transactions yet</small>
@@ -131,8 +139,8 @@ export default function Dashboard() {
               </table>
             </div>
           )}
-        </div>
-        <div className="crm-card">
+        </div>}
+        {canViewSupport && <div className="crm-card">
           <h3>
             Support inbox <span className="crm-pill crm-pill--bad">{openTickets} open</span>
           </h3>
@@ -155,7 +163,7 @@ export default function Dashboard() {
               </div>
             ))
           )}
-        </div>
+        </div>}
       </div>
     </>
   );

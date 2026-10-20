@@ -1,18 +1,12 @@
 import { useEffect } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { useAuth } from "@/lib/AuthContext";
+import { Outlet } from "react-router-dom";
 import { CrmProvider, useCrm } from "@/lib/CrmContext";
 import CrmSidebar from "@/components/crm/CrmSidebar";
 
 function CrmShell() {
-  const { member, loading, denied } = useCrm();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (loading) return;
-    if (denied || !member) {
-      window.location.href = "/login";
-    }
-  }, [loading, denied, member]);
+  const { member, loading, denied, error, checkAccess } = useCrm();
+  const { logout } = useAuth();
 
   useEffect(() => {
     let meta = document.querySelector('meta[name="robots"]');
@@ -35,7 +29,19 @@ function CrmShell() {
       </div>
     );
   }
-  if (denied || !member) return null;
+  if (denied || !member) {
+    return (
+      <div className="crm-empty" role="alert">
+        {error ? `Could not verify admin access: ${error}` : "This account does not have admin access."}
+        <button className="crm-b crm-b--g" onClick={checkAccess}>
+          Retry access check
+        </button>
+        <button className="crm-b" onClick={() => logout().then(() => { window.location.href = "/login"; }).catch((signOutError) => console.error("Sign-out failed:", signOutError))}>
+          Sign out
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="crm-app">

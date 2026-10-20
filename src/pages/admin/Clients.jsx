@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { createRecord, deleteRecord, listRecords } from "@/api/data";
 import { useCrm } from "@/lib/CrmContext";
 import { initials, canAccess, canEditClients } from "@/lib/crmConstants";
 import CrmPageHeader from "@/components/crm/CrmPageHeader";
@@ -18,18 +18,21 @@ export default function Clients() {
   const [deleteId, setDeleteId] = useState(null);
   const [form, setForm] = useState({ company_name: "", logo: "", description: "", contact_person: "", email: "", phone: "" });
   const [errors, setErrors] = useState({});
+  const [loadError, setLoadError] = useState("");
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     try {
       const [c, p] = await Promise.all([
-        base44.entities.Client.list(),
-        base44.entities.Project.list(),
+        listRecords("clients"),
+        listRecords("projects"),
       ]);
       setClients(c);
       setProjects(p);
-    } catch {
+      setLoadError("");
+    } catch (error) {
       setClients([]);
+      setLoadError(error.message || "Could not load clients.");
     }
   }, []);
 
@@ -56,7 +59,7 @@ export default function Clients() {
     if (!validate()) return;
     setSaving(true);
     try {
-      await base44.entities.Client.create(form);
+      await createRecord("clients", form);
       setShowAdd(false);
       setForm({ company_name: "", logo: "", description: "", contact_person: "", email: "", phone: "" });
       await load();
@@ -69,11 +72,11 @@ export default function Clients() {
 
   const handleDelete = async () => {
     try {
-      await base44.entities.Client.delete(deleteId);
+      await deleteRecord("clients", deleteId);
       setDeleteId(null);
       await load();
-    } catch {
-      /* ignore */
+    } catch (error) {
+      setLoadError(error.message || "Could not delete the client.");
     }
   };
 
@@ -88,6 +91,7 @@ export default function Clients() {
         actionLabel="+ Add client"
         onAction={() => setShowAdd(true)}
       />
+      {loadError && <p role="alert" className="crm-field-err">{loadError}</p>}
       {clients.length === 0 ? (
         <div className="crm-empty">No clients yet, add your first client.</div>
       ) : (
@@ -96,7 +100,7 @@ export default function Clients() {
             <div key={c.id} className="crm-card crm-card--h">
               <div className="crm-row">
                 {c.logo ? (
-                  <SignedImage fileUri={c.logo} alt={c.company_name} className="crm-av" />
+                  <SignedImage fileUri={c.logo} alt={c.company_name} className="crm-av" bucketName="company-logos" fallbackBucketName="crm-files" />
                 ) : (
                   <div className="crm-av">{initials(c.company_name)}</div>
                 )}
@@ -134,7 +138,7 @@ export default function Clients() {
           <ModalField label="Company name" required error={errors.company_name}>
             <input className={inputClass} value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
           </ModalField>
-          <FileUpload label="Logo" accept="image/*" value={form.logo} onChange={(v) => setForm({ ...form, logo: v })} />
+          <FileUpload label="Logo" accept="image/*" value={form.logo} onChange={(v) => setForm({ ...form, logo: v })} bucketName="company-logos" />
           <ModalField label="Description">
             <textarea className={inputClass} rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           </ModalField>

@@ -1,11 +1,10 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/utils/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UserPlus, Mail, Lock, Loader2 } from "lucide-react";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { toast } from "@/components/ui/use-toast";
@@ -17,8 +16,7 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showOtp, setShowOtp] = useState(false);
-  const [otpCode, setOtpCode] = useState("");
+  const [confirmationSent, setConfirmationSent] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,8 +27,19 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      await base44.auth.register({ email, password });
-      setShowOtp(true);
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/login?returnTo=${encodeURIComponent(safeReturnTo())}`,
+        },
+      });
+      if (error) throw error;
+      if (data.session) {
+        window.location.href = safeReturnTo();
+        return;
+      }
+      setConfirmationSent(true);
     } catch (err) {
       setError(err.message || "Registration failed");
     } finally {
@@ -38,86 +47,65 @@ export default function Register() {
     }
   };
 
-  const handleVerify = async () => {
+  const handleResend = async () => {
     setError("");
     setLoading(true);
     try {
-      const result = await base44.auth.verifyOtp({ email, otpCode });
-      if (result?.access_token) {
-        base44.auth.setToken(result.access_token);
-      }
-      window.location.href = safeReturnTo();
+      const { error } = await supabase.auth.resend({ type: "signup", email });
+      if (error) throw error;
+      toast({
+        title: "Confirmation link sent",
+        description: "Check your email to confirm your account.",
+      });
     } catch (err) {
-      setError(err.message || "Invalid verification code");
+      setError(err.message || "Failed to resend confirmation email.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleResend = async () => {
+  const handleGoogle = async () => {
     setError("");
     try {
-      await base44.auth.resendOtp(email);
-      toast({
-        title: "Code sent",
-        description: "Check your email for the new code.",
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}${safeReturnTo()}` },
       });
-    } catch (err) {
-      setError(err.message || "Failed to resend code");
+      if (error) throw error;
+    } catch (error) {
+      setError(error.message || "Google sign-in failed.");
     }
   };
 
-  const handleGoogle = () => {
-    base44.auth.loginWithProvider("google", safeReturnTo());
-  };
-
-  if (showOtp) {
+  if (confirmationSent) {
     return (
       <AuthLayout
         icon={Mail}
         title="Verify your email"
-        subtitle={`We sent a code to ${email}`}
+        subtitle={`We sent a confirmation link to ${email}`}
+        footer={
+          <>
+            Already have an account?{" "}
+            <Link
+              to={"/login" + (safeReturnTo() !== "/" ? "?returnTo=" + encodeURIComponent(safeReturnTo()) : "")}
+              className="text-primary font-medium hover:underline"
+            >
+              Log in
+            </Link>
+          </>
+        }
       >
         {error && (
           <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
             {error}
           </div>
         )}
-        <div className="flex justify-center mb-6">
-          <InputOTP
-            maxLength={6}
-            value={otpCode}
-            onChange={setOtpCode}
-            autoFocus
-            autoComplete="one-time-code"
-          >
-            <InputOTPGroup>
-              <InputOTPSlot index={0} />
-              <InputOTPSlot index={1} />
-              <InputOTPSlot index={2} />
-              <InputOTPSlot index={3} />
-              <InputOTPSlot index={4} />
-              <InputOTPSlot index={5} />
-            </InputOTPGroup>
-          </InputOTP>
-        </div>
-        <Button
-          className="w-full h-12 font-medium"
-          onClick={handleVerify}
-          disabled={loading || otpCode.length < 6}
-        >
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Verifying...
-            </>
-          ) : (
-            "Verify"
-          )}
-        </Button>
+        <p className="text-sm text-foreground text-center">
+          Follow the link in your email to verify your account and finish signing in.
+        </p>
         <p className="text-center text-sm text-muted-foreground mt-4">
-          Didn't receive the code?{" "}
-          <button onClick={handleResend} className="text-primary font-medium hover:underline">
+          Didn't receive the email?{" "}
+          <button onClick={handleResend} disabled={loading} className="text-primary font-medium hover:underline">
             Resend
           </button>
         </p>

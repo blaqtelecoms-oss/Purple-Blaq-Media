@@ -1,8 +1,8 @@
 // Shared constants for Purple Blaq Media site
 export const LOGO_URL =
-  "https://media.base44.com/images/public/user_696bf13d70e7d835d6d4d534/5e6eb535b_pb-logo1.png";
+  "/assets/media/5e6eb535b_pb-logo1.png";
 export const HERO_BG_URL =
-  "https://media.base44.com/images/public/user_696bf13d70e7d835d6d4d534/e3ad09c29_pb-hero-bg1.jpg";
+  "/assets/media/e3ad09c29_pb-hero-bg1.jpg";
 
 export const CONTACT = {
   location: "Vanderbijlpark, Gauteng, South Africa",

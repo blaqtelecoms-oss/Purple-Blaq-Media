@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { listRecords, updateRecord } from "@/api/data";
+import { supabase } from "@/utils/supabase";
 import { useCrm } from "@/lib/CrmContext";
-import { initials, formatTime, canAccess, canManageSupport } from "@/lib/crmConstants";
+import { formatTime, canAccess, canManageSupport } from "@/lib/crmConstants";
 import CrmPageHeader from "@/components/crm/CrmPageHeader";
 
 export default function Support() {
@@ -14,19 +15,22 @@ export default function Support() {
   const [reply, setReply] = useState("");
   const [migrating, setMigrating] = useState(false);
   const [migrateMsg, setMigrateMsg] = useState("");
+  const [loadError, setLoadError] = useState("");
   const replyRef = useRef(null);
 
   const load = useCallback(async () => {
     try {
       const [t, tm] = await Promise.all([
-        base44.entities.SupportTicket.list("-created_date"),
-        base44.entities.TeamMember.list(),
+        listRecords("support_tickets", { orderBy: "created_date", ascending: false }),
+        listRecords("team_members"),
       ]);
       setTickets(t);
       setTeam(tm);
       if (t.length && !selectedId) setSelectedId(t[0].id);
-    } catch {
+      setLoadError("");
+    } catch (error) {
       setTickets([]);
+      setLoadError(error.message || "Could not load support data.");
     }
   }, [selectedId]);
 
@@ -48,33 +52,33 @@ export default function Support() {
     if (!v || !ticket) return;
     try {
       const messages = [...(ticket.messages || []), { from: "team", text: v, timestamp: new Date().toISOString() }];
-      await base44.entities.SupportTicket.update(ticket.id, { messages });
+      await updateRecord("support_tickets", ticket.id, { messages });
       setReply("");
       await load();
-    } catch {
-      /* ignore */
+    } catch (error) {
+      setLoadError(error.message || "Could not send the reply.");
     }
   };
 
   const assignTicket = async (assigneeId) => {
     if (!ticket) return;
     try {
-      await base44.entities.SupportTicket.update(ticket.id, { assigned_to_id: assigneeId || "" });
+      await updateRecord("support_tickets", ticket.id, { assigned_to_id: assigneeId || "" });
       await load();
-    } catch {
-      /* ignore */
+    } catch (error) {
+      setLoadError(error.message || "Could not assign the ticket.");
     }
   };
 
   const toggleStatus = async () => {
     if (!ticket) return;
     try {
-      await base44.entities.SupportTicket.update(ticket.id, {
+      await updateRecord("support_tickets", ticket.id, {
         status: ticket.status === "Open" ? "Resolved" : "Open",
       });
       await load();
-    } catch {
-      /* ignore */
+    } catch (error) {
+      setLoadError(error.message || "Could not update ticket status.");
     }
   };
 
@@ -82,8 +86,9 @@ export default function Support() {
     setMigrating(true);
     setMigrateMsg("");
     try {
-      const res = await base44.functions.invoke("migrateEnquiries", {});
-      setMigrateMsg(`Migrated ${res.data?.migrated || 0} of ${res.data?.total || 0} enquiries.`);
+      const { data, error } = await supabase.functions.invoke("migrate-enquiries");
+      if (error) throw error;
+      setMigrateMsg(`Migrated ${data?.migrated || 0} of ${data?.total || 0} enquiries.`);
       await load();
     } catch (err) {
       setMigrateMsg("Migration failed: " + (err.message || "error"));
@@ -97,6 +102,7 @@ export default function Support() {
   return (
     <>
       <CrmPageHeader title="Support" em="inbox" />
+      {loadError && <p role="alert" className="crm-field-err">{loadError}</p>}
       {tickets.length === 0 ? (
         <>
           <div className="crm-empty">No support tickets yet. New contact form submissions will appear here.</div>

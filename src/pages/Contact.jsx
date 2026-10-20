@@ -2,7 +2,7 @@ import { useState } from "react";
 import PageHeader from "@/components/pb/PageHeader";
 import CTA from "@/components/pb/CTA";
 import { useSeo } from "@/hooks/useSeo";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/utils/supabase";
 import { CONTACT } from "@/lib/pbConstants";
 import { IconPin, IconPhone, IconMail } from "@/components/pb/Icons";
 
@@ -58,27 +58,8 @@ export default function Contact() {
     }
     setSubmitting(true);
     try {
-      await base44.entities.Enquiry.create({
-        ...form,
-        status: "New",
-      });
-      // Also create a support ticket for the CRM inbox
-      try {
-        await base44.functions.invoke("createSupportTicket", {
-          full_name: form.full_name,
-          email: form.email,
-          subject: form.enquiry_type || "General enquiry",
-          message: form.message,
-        });
-      } catch (_) {
-        /* best-effort */
-      }
-      // best-effort email notification
-      try {
-        await base44.functions.invoke("notifyEnquiry", form);
-      } catch (_) {
-        /* saving is the reliable path */
-      }
+      const { error } = await supabase.functions.invoke("website-contact", { body: form });
+      if (error) throw error;
       setSuccess(true);
       setForm(EMPTY);
     } catch (err) {

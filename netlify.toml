@@ -1,5 +1,5 @@
 # Netlify deployment configuration for Purple Blaq Flow
-# Vite + React single-page application (Base44 app)
+# Vite + React single-page application
 
 [build]
   command = "npm run build"
