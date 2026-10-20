@@ -1,15 +1,15 @@
 const PHOTOS = {
   "Workflow Systems": {
-    src: "https://images.unsplash.com/photo-1612299273045-362a39972259?auto=format&fit=crop&w=800&q=80",
-    alt: "Black professional using a MacBook to manage a workflow system",
+    src: "https://images.unsplash.com/photo-1686061593213-98dad7c599b9?auto=format&fit=crop&w=800&q=80",
+    alt: "Computer screen showing workflow data and charts in a centralised system",
   },
   "Web Applications": {
-    src: "https://images.unsplash.com/photo-1739300293504-234817eead52?auto=format&fit=crop&w=800&q=80",
-    alt: "Black woman working in a custom web application dashboard",
+    src: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=800&q=80",
+    alt: "Monitor displaying programming code for a custom web application",
   },
   "Process Digitisation": {
-    src: "https://images.unsplash.com/photo-1641760342353-f932d81fdbf1?auto=format&fit=crop&w=800&q=80",
-    alt: "Black professionals reviewing documents to digitise a process",
+    src: "https://images.unsplash.com/photo-1547658719-da2b51169166?auto=format&fit=crop&w=800&q=80",
+    alt: "Monitor displaying a digital product interface for a digitised business process",
   },
 };
 

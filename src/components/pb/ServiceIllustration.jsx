@@ -1,15 +1,15 @@
 const IMAGES = {
   "Workflow Systems": {
-    src: "https://images.unsplash.com/photo-1739298061707-cefee19941b7?auto=format&fit=crop&w=800&q=80",
-    alt: "Black professionals collaborating around a table on a workflow system",
+    src: "https://images.unsplash.com/photo-1526628953301-3e589a6a8b74?auto=format&fit=crop&w=800&q=80",
+    alt: "Monitoring screen displaying a live workflow dashboard with real-time data",
   },
   "Web Applications": {
-    src: "https://images.unsplash.com/photo-1654022089753-064327fe4b1a?auto=format&fit=crop&w=800&q=80",
-    alt: "Black developer working on a multi-device web application",
+    src: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80",
+    alt: "MacBook screen showing lines of code for a custom web application",
   },
   "Process Digitisation": {
-    src: "https://images.unsplash.com/photo-1641760152630-07d889166174?auto=format&fit=crop&w=800&q=80",
-    alt: "Black professional managing the digitisation of documents into a digital system",
+    src: "https://images.unsplash.com/photo-1528901166007-3784c7dd3653?auto=format&fit=crop&w=800&q=80",
+    alt: "Black professionals working at computers managing a digitised process",
   },
 };
 
