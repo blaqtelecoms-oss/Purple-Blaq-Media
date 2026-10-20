@@ -23,7 +23,8 @@ export default function Marketing() {
   const { member } = useCrm();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab = searchParams.get("tab") || "Overview";
+  const rawTab = searchParams.get("tab") || "overview";
+  const tab = rawTab.charAt(0).toUpperCase() + rawTab.slice(1);
   const { data, error, reload } = useMarketingData();
 
   useEffect(() => {
