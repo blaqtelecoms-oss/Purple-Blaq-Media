@@ -35,7 +35,7 @@ export default function MarketingIntegrations({ data, reload }) {
     try {
       const existing = conn(integration.key);
       const isPhase1 = integration.phase === 1;
-      const nextStatus = existing?.status === "connected" ? "disconnected" : isPhase1 ? "connected" : "needs_setup";
+      const nextStatus = (existing?.status === "connected" || existing?.status === "needs_setup") ? "disconnected" : isPhase1 ? "connected" : "needs_setup";
 
       if (existing) {
         await updateRecord("integration_connections", existing.id, {

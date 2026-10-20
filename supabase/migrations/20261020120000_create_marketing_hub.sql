@@ -1,6 +1,19 @@
 -- Marketing Hub: leads, campaigns, content, email, tasks, assets, tools and integrations.
 -- Reuses existing clients and transactions (Finance) tables. No tokens stored here.
 
+-- Ensure the updated_date trigger function exists (may be missing if the initial
+-- migration was applied partially on the remote database).
+create or replace function public.set_updated_date()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  new.updated_date = now();
+  return new;
+end;
+$$;
+
 create table public.marketing_leads (
 	id text primary key default gen_random_uuid()::text,
 	name text not null,
