@@ -24,8 +24,8 @@ const SLIDES = [
     cta: { label: "See workflow systems", to: "/services" },
   },
   {
-    src: "https://images.unsplash.com/photo-1603201667141-5a2d4c673378?auto=format&fit=crop&w=1600&q=80",
-    alt: "Team working together at desks with laptops in a modern office",
+    src: "https://images.unsplash.com/photo-1573164574572-cb89e39749b4?auto=format&fit=crop&w=1600&q=80",
+    alt: "Black professional team collaborating with laptops around a conference table in a modern office",
     audience: "For growing businesses",
     title: "Systems That <em>Scale With You</em>",
     message:
@@ -33,8 +33,8 @@ const SLIDES = [
     cta: { label: "See how we help", to: "/services" },
   },
   {
-    src: "https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=1600&q=80",
-    alt: "Professional working at a keyboard digitising a business process on screen",
+    src: "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1600&q=80",
+    alt: "Black professionals working together at a monitor digitising a business process",
     audience: "For paper-heavy organisations",
     title: "From Paper to <em>Process</em>",
     message:

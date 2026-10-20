@@ -8,8 +8,8 @@ const IMAGES = {
     alt: "MacBook screen showing lines of code for a custom web application",
   },
   "Process Digitisation": {
-    src: "https://images.unsplash.com/photo-1556761175-4b46a572b786?auto=format&fit=crop&w=800&q=80",
-    alt: "Professional at a desk with multiple monitors managing a digitised process",
+    src: "https://images.unsplash.com/photo-1528901166007-3784c7dd3653?auto=format&fit=crop&w=800&q=80",
+    alt: "Black professionals working at computers managing a digitised process",
   },
 };
 
