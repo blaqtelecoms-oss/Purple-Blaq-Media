@@ -79,13 +79,8 @@ Deno.serve(async (request: Request) => {
       // Upsert the master "google" connection (stores tokens) and each
       // Google integration connection (so existing UI checks keep working).
       for (const key of GOOGLE_INTEGRATION_KEYS) {
-        const { data: existing } = await supabase
-          .from("integration_connections")
-          .select("id")
-          .eq("key", key)
-          .maybeSingle();
-
         const record = {
+          key,
           status: "connected",
           connected_at: now,
           last_sync_at: now,
@@ -93,10 +88,12 @@ Deno.serve(async (request: Request) => {
           source_data: key === "google" ? tokenData : { connected_via: "google" },
         };
 
-        if (existing) {
-          await supabase.from("integration_connections").update(record).eq("id", existing.id);
-        } else {
-          await supabase.from("integration_connections").insert({ key, ...record });
+        const { error } = await supabase
+          .from("integration_connections")
+          .upsert(record, { onConflict: "key" });
+
+        if (error) {
+          console.error(`Failed to upsert integration_connections for key "${key}":`, error);
         }
       }
 

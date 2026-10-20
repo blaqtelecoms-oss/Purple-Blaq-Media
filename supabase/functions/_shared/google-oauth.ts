@@ -17,6 +17,7 @@ const SCOPES = [
   "https://www.googleapis.com/auth/calendar",
   "https://www.googleapis.com/auth/adwords",
   "https://www.googleapis.com/auth/drive.readonly",
+  "https://www.googleapis.com/auth/tasks",
   "openid",
   "email",
 ].join(" ");

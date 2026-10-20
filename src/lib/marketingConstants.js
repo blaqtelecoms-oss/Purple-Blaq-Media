@@ -13,7 +13,7 @@ export const CAMPAIGN_CHANNELS = [
 
 export const CAMPAIGN_STATUSES = ["Planned", "Active", "Ended"];
 
-export const CONTENT_PLATFORMS = ["Blog", "Instagram", "Facebook", "LinkedIn", "TikTok", "X", "Email"];
+export const CONTENT_PLATFORMS = ["Blog", "Instagram", "Facebook", "LinkedIn", "TikTok", "X", "Email", "Google Calendar"];
 
 export const CONTENT_STATUSES = ["Idea", "Drafting", "Review", "Scheduled", "Published"];
 

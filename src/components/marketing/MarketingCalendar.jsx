@@ -17,8 +17,11 @@ export default function MarketingCalendar({ data, reload }) {
   const [cursor, setCursor] = useState(new Date());
   const [detail, setDetail] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm] = useState({ title: "", platform: "Blog", status: "Scheduled", publish_date: "", owner: "", caption: "" });
 
   const gcal = integrations.some((i) => i.key === "gcal" && i.status === "connected");
+  const googleConnected = integrations.some((i) => i.key === "google" && i.status === "connected");
   const [syncing, setSyncing] = useState(false);
 
   const syncCalendar = async () => {
@@ -37,6 +40,25 @@ export default function MarketingCalendar({ data, reload }) {
       alert(err.message || "Could not sync to Google Calendar.");
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const add = async () => {
+    if (!form.title.trim()) return;
+    setSaving(true);
+    try {
+      await createRecord("content_items", form);
+      setShowAdd(false);
+      setForm({ title: "", platform: "Blog", status: "Scheduled", publish_date: "", owner: "", caption: "" });
+      await reload();
+      // If Google is connected, sync to push the new item to Google Calendar
+      if (googleConnected) {
+        await syncCalendar();
+      }
+    } catch (err) {
+      alert(err.message || "Could not create the content item.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -82,13 +104,13 @@ export default function MarketingCalendar({ data, reload }) {
     <>
       <div className="crm-chips" style={{ marginBottom: 18, alignItems: "center" }}>
         <b>Calendar sync</b>
-        <span className={`crm-pill ${gcal ? "ok" : ""}`}>Google Calendar {gcal ? "connected" : "not connected"}</span>
-        {gcal && (
+        <span className={`crm-pill ${googleConnected ? "ok" : ""}`}>Google Calendar {googleConnected ? "connected" : "not connected"}</span>
+        {googleConnected && (
           <button className="crm-b crm-b--g" style={{ fontSize: 12 }} onClick={syncCalendar} disabled={syncing}>
             {syncing ? "Syncing…" : "Sync now"}
           </button>
         )}
-        <span style={{ color: "var(--mut)", fontSize: 12, marginLeft: "auto" }}>Idea → Drafting → Review → Scheduled → Published</span>
+        <button className="crm-b" style={{ fontSize: 12, marginLeft: "auto" }} onClick={() => setShowAdd(true)}>+ New event</button>
       </div>
 
       <div className="crm-card">
@@ -144,6 +166,34 @@ export default function MarketingCalendar({ data, reload }) {
           </ModalField>
           <ModalField label="Owner"><input className={inputClass} value={detail.owner || ""} onChange={(e) => setDetail({ ...detail, owner: e.target.value })} /></ModalField>
           <ModalField label="Caption"><textarea className={inputClass} rows={3} value={detail.caption || ""} onChange={(e) => setDetail({ ...detail, caption: e.target.value })} /></ModalField>
+        </Drawer>
+      )}
+
+      {showAdd && (
+        <Drawer title="New calendar event" subtitle="Content item" onClose={() => setShowAdd(false)}
+          footer={
+            <>
+              <button className="crm-b crm-b--g" onClick={() => setShowAdd(false)}>Cancel</button>
+              <button className="crm-b" onClick={add} disabled={saving}>{saving ? "Saving…" : "Save"}</button>
+            </>
+          }>
+          <ModalField label="Title" required><input className={inputClass} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></ModalField>
+          <ModalField label="Platform">
+            <select className={inputClass} value={form.platform} onChange={(e) => setForm({ ...form, platform: e.target.value })}>
+              {CONTENT_PLATFORMS.map((p) => <option key={p}>{p}</option>)}
+            </select>
+          </ModalField>
+          <ModalField label="Status">
+            <select className={inputClass} value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+              {CONTENT_STATUSES.map((s) => <option key={s}>{s}</option>)}
+            </select>
+          </ModalField>
+          <ModalField label="Publish date"><input className={inputClass} type="date" value={form.publish_date} onChange={(e) => setForm({ ...form, publish_date: e.target.value })} /></ModalField>
+          <ModalField label="Owner"><input className={inputClass} value={form.owner} onChange={(e) => setForm({ ...form, owner: e.target.value })} /></ModalField>
+          <ModalField label="Caption"><textarea className={inputClass} rows={3} value={form.caption} onChange={(e) => setForm({ ...form, caption: e.target.value })} /></ModalField>
+          {googleConnected && (
+            <p style={{ color: "var(--mut)", fontSize: 12, marginTop: 8 }}>Saving will also push this event to your Google Calendar.</p>
+          )}
         </Drawer>
       )}
     </>
