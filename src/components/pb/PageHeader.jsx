@@ -1,7 +1,7 @@
 import Reveal from "@/components/pb/Reveal";
 
 const HEADER_BG =
-  "/assets/media/5d7ba2cf2_generated_485b497a.png";
+  "https://images.unsplash.com/photo-1573167627769-e201a7ddf409?auto=format&fit=crop&w=1600&q=80";
 
 export default function PageHeader({ eyebrow, title, lead }) {
   // title may contain <em>...</em> markup; render with dangerouslySetInnerHTML

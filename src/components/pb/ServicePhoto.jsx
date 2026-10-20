@@ -1,30 +1,27 @@
-const ASSET =
-  "/assets/media/4143cb5f3_generated_52280b84.png";
-
-const QUADRANTS = {
+const PHOTOS = {
   "Workflow Systems": {
-    pos: "0% 0%",
-    alt: "Team collaborating on a workflow process diagram at a whiteboard",
+    src: "https://images.unsplash.com/photo-1612299273045-362a39972259?auto=format&fit=crop&w=800&q=80",
+    alt: "Black professional using a MacBook to manage a workflow system",
   },
   "Web Applications": {
-    pos: "100% 0%",
-    alt: "Professional working in a custom web application dashboard at her desk",
+    src: "https://images.unsplash.com/photo-1739300293504-234817eead52?auto=format&fit=crop&w=800&q=80",
+    alt: "Black woman working in a custom web application dashboard",
   },
   "Process Digitisation": {
-    pos: "100% 100%",
-    alt: "Team reviewing paper documents alongside a tablet to digitise a process",
+    src: "https://images.unsplash.com/photo-1641760342353-f932d81fdbf1?auto=format&fit=crop&w=800&q=80",
+    alt: "Black professionals reviewing documents to digitise a process",
   },
 };
 
 export default function ServicePhoto({ service, className = "" }) {
-  const q = QUADRANTS[service];
+  const q = PHOTOS[service];
   if (!q) return null;
   return (
     <div
       role="img"
       aria-label={q.alt}
       className={`pb-svc-ill ${className}`}
-      style={{ backgroundImage: `url(${ASSET})`, backgroundPosition: q.pos }}
+      style={{ backgroundImage: `url(${q.src})`, backgroundSize: "cover", backgroundPosition: "center" }}
     />
   );
 }
