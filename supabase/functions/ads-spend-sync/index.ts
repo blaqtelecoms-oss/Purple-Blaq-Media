@@ -8,7 +8,7 @@ import { getGoogleAccessToken } from "../_shared/google-oauth.ts";
  *
  * Required secrets:
  *   Google Ads: GOOGLE_ADS_DEVELOPER_TOKEN, GOOGLE_ADS_CUSTOMER_ID,
- *               GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY
+ *               GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET (OAuth)
  *   Meta Ads:   META_ADS_ACCESS_TOKEN, META_AD_ACCOUNT_ID
  */
 
