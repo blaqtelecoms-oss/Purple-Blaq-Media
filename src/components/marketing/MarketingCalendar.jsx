@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createRecord, updateRecord } from "@/api/data";
+import { supabase } from "@/utils/supabase";
 import { CONTENT_PLATFORMS, CONTENT_STATUSES, statusPillClass } from "@/lib/marketingConstants";
 import Drawer from "@/components/marketing/Drawer";
 import { ModalField, inputClass } from "@/components/crm/Modal";
@@ -18,6 +19,26 @@ export default function MarketingCalendar({ data, reload }) {
   const [saving, setSaving] = useState(false);
 
   const gcal = integrations.some((i) => i.key === "gcal" && i.status === "connected");
+  const [syncing, setSyncing] = useState(false);
+
+  const syncCalendar = async () => {
+    setSyncing(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calendar-sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token || ""}` },
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Sync failed.");
+      alert(result.message || "Calendar synced.");
+      await reload();
+    } catch (err) {
+      alert(err.message || "Could not sync to Google Calendar.");
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
@@ -62,6 +83,11 @@ export default function MarketingCalendar({ data, reload }) {
       <div className="crm-chips" style={{ marginBottom: 18, alignItems: "center" }}>
         <b>Calendar sync</b>
         <span className={`crm-pill ${gcal ? "ok" : ""}`}>Google Calendar {gcal ? "connected" : "not connected"}</span>
+        {gcal && (
+          <button className="crm-b crm-b--g" style={{ fontSize: 12 }} onClick={syncCalendar} disabled={syncing}>
+            {syncing ? "Syncing…" : "Sync now"}
+          </button>
+        )}
         <span style={{ color: "var(--mut)", fontSize: 12, marginLeft: "auto" }}>Idea → Drafting → Review → Scheduled → Published</span>
       </div>
 

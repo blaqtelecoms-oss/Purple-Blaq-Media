@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createRecord, updateRecord, deleteRecord } from "@/api/data";
+import { supabase } from "@/utils/supabase";
 import { formatZAR, formatDate } from "@/lib/crmConstants";
 import { CAMPAIGN_CHANNELS, CAMPAIGN_STATUSES, statusPillClass, roi, leadsForCampaign } from "@/lib/marketingConstants";
 import Modal, { ModalField, inputClass } from "@/components/crm/Modal";
@@ -87,12 +88,29 @@ export default function MarketingCampaigns({ data, reload }) {
     }
   };
 
-  const pullSpend = () => {
+  const [pullingSpend, setPullingSpend] = useState(false);
+  const pullSpend = async () => {
     if (!gads && !mads) {
       alert("Connect a Google Ads or Meta Ads account on the Integrations tab first.");
       return;
     }
-    alert("Pulling real spend from connected ad accounts will be available once Phase 3 is complete. For now, update spend manually on each campaign.");
+    setPullingSpend(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ads-spend-sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token || ""}` },
+        body: JSON.stringify({ days: 30 }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Sync failed.");
+      alert(result.message || "Spend synced.");
+      await reload();
+    } catch (err) {
+      alert(err.message || "Could not sync ad spend.");
+    } finally {
+      setPullingSpend(false);
+    }
   };
 
   return (
@@ -101,7 +119,7 @@ export default function MarketingCampaigns({ data, reload }) {
         <b>Ad accounts</b>
         <span className={`crm-pill ${gads ? "ok" : ""}`}>Google Ads {gads ? "connected" : "not connected"}</span>
         <span className={`crm-pill ${mads ? "ok" : ""}`}>Meta Ads {mads ? "connected" : "not connected"}</span>
-        <button className="crm-b crm-b--g" style={{ marginLeft: "auto" }} onClick={pullSpend}>Pull spend</button>
+        <button className="crm-b crm-b--g" style={{ marginLeft: "auto" }} onClick={pullSpend} disabled={pullingSpend}>{pullingSpend ? "Syncing…" : "Pull spend"}</button>
         <button className="crm-b" onClick={() => { setShowAdd(true); setForm(emptyForm); }}>+ New campaign</button>
       </div>
 

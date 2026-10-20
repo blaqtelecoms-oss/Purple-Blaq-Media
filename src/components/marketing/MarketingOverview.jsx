@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/utils/supabase";
 import { formatZAR } from "@/lib/crmConstants";
 import { statusPillClass } from "@/lib/marketingConstants";
 
@@ -54,6 +56,44 @@ export default function MarketingOverview({ data }) {
 
   const ga4 = (data.integration_connections || []).find((i) => i.key === "ga4" && i.status === "connected");
   const gsc = (data.integration_connections || []).find((i) => i.key === "gsc" && i.status === "connected");
+  const [ga4Data, setGa4Data] = useState(null);
+  const [gscData, setGscData] = useState(null);
+
+  useEffect(() => {
+    if (!ga4) { setGa4Data(null); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ga4-metrics`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token || ""}` },
+          body: JSON.stringify({ days: 30 }),
+        });
+        const result = await res.json();
+        if (!cancelled && res.ok) setGa4Data(result);
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, [ga4]);
+
+  useEffect(() => {
+    if (!gsc) { setGscData(null); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gsc-keywords`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token || ""}` },
+          body: JSON.stringify({ days: 28 }),
+        });
+        const result = await res.json();
+        if (!cancelled && res.ok) setGscData(result);
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, [gsc]);
 
   return (
     <>
@@ -92,11 +132,75 @@ export default function MarketingOverview({ data }) {
               Connect Google Analytics or Search Console on the Integrations tab to see live traffic and keywords.
             </div>
           ) : (
-            <div className="crm-empty">
-              {ga4 ? "GA4 connected — visit and page data will appear here once Phase 2 is complete." : "Connect GA4 for visit data."}
-              <br />
-              {gsc ? "Search Console connected — keyword data will appear here once Phase 2 is complete." : "Connect Search Console for keyword data."}
-            </div>
+            <>
+              {ga4 && (
+                <div style={{ marginBottom: 16 }}>
+                  <h4 style={{ fontSize: 13, marginBottom: 8 }}>Google Analytics 4</h4>
+                  {ga4Data ? (
+                    <>
+                      <div className="crm-row" style={{ gap: 20, padding: "6px 0" }}>
+                        <span><b>{ga4Data.totals.visitors}</b> visitors</span>
+                        <span><b>{ga4Data.totals.sessions}</b> sessions</span>
+                        <span><b>{ga4Data.totals.pageViews}</b> page views</span>
+                      </div>
+                      {ga4Data.topPages?.length > 0 && (
+                        <>
+                          <div style={{ color: "var(--mut)", fontSize: 12, margin: "8px 0 4px" }}>Top pages</div>
+                          {ga4Data.topPages.slice(0, 5).map((p) => (
+                            <div className="crm-row" key={p.path} style={{ padding: "4px 0", fontSize: 13 }}>
+                              <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.path}</span>
+                              <b>{p.views}</b>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                      {ga4Data.topSources?.length > 0 && (
+                        <>
+                          <div style={{ color: "var(--mut)", fontSize: 12, margin: "8px 0 4px" }}>Traffic sources</div>
+                          {ga4Data.topSources.slice(0, 5).map((s) => (
+                            <div className="crm-row" key={s.medium} style={{ padding: "4px 0", fontSize: 13 }}>
+                              <span style={{ flex: 1 }}>{s.medium}</span>
+                              <b>{s.visitors}</b>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <div style={{ color: "var(--mut)", fontSize: 13 }}>Loading GA4 data…</div>
+                  )}
+                </div>
+              )}
+              {gsc && (
+                <div>
+                  <h4 style={{ fontSize: 13, marginBottom: 8 }}>Google Search Console</h4>
+                  {gscData ? (
+                    <>
+                      <div className="crm-row" style={{ gap: 20, padding: "6px 0" }}>
+                        <span><b>{gscData.totals.clicks}</b> clicks</span>
+                        <span><b>{gscData.totals.impressions}</b> impressions</span>
+                        <span>Avg pos <b>{gscData.totals.avgPosition}</b></span>
+                      </div>
+                      {gscData.topKeywords?.length > 0 && (
+                        <>
+                          <div style={{ color: "var(--mut)", fontSize: 12, margin: "8px 0 4px" }}>Top keywords</div>
+                          {gscData.topKeywords.slice(0, 5).map((k) => (
+                            <div className="crm-row" key={k.keyword?.[0]} style={{ padding: "4px 0", fontSize: 13 }}>
+                              <span style={{ flex: 1 }}>{k.keyword?.[0]}</span>
+                              <span style={{ color: "var(--mut)" }}>{k.clicks} clicks · pos {k.position}</span>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <div style={{ color: "var(--mut)", fontSize: 13 }}>Loading Search Console data…</div>
+                  )}
+                </div>
+              )}
+              {!ga4 && <div style={{ color: "var(--mut)", fontSize: 13 }}>Connect GA4 for visit data.</div>}
+              {!gsc && <div style={{ color: "var(--mut)", fontSize: 13 }}>Connect Search Console for keyword data.</div>}
+            </>
           )}
         </div>
       </div>

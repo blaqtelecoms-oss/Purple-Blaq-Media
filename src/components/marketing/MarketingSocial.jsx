@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createRecord, updateRecord } from "@/api/data";
+import { supabase } from "@/utils/supabase";
 import { CONTENT_PLATFORMS, CONTENT_STATUSES, statusPillClass } from "@/lib/marketingConstants";
 import Modal, { ModalField, inputClass } from "@/components/crm/Modal";
 
@@ -18,6 +19,28 @@ export default function MarketingSocial({ data, reload }) {
   const meta = integrations.some((i) => i.key === "meta" && i.status === "connected");
   const li = integrations.some((i) => i.key === "li" && i.status === "connected");
   const tt = integrations.some((i) => i.key === "tt" && i.status === "connected");
+  const [publishing, setPublishing] = useState(null);
+
+  const publish = async (content) => {
+    if (!confirm(`Publish "${content.title}" to ${content.platform}?`)) return;
+    setPublishing(content.id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/social-publish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token || ""}` },
+        body: JSON.stringify({ content_id: content.id }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Publish failed.");
+      alert(`Published to ${content.platform}.`);
+      await reload();
+    } catch (err) {
+      alert(err.message || "Could not publish the post.");
+    } finally {
+      setPublishing(null);
+    }
+  };
 
   const compose = async () => {
     if (!form.title.trim()) return;
@@ -82,8 +105,17 @@ export default function MarketingSocial({ data, reload }) {
               <div style={{ color: "var(--mut)", fontSize: 12 }}>
                 Reach {(Number(c.reach) || 0).toLocaleString("en-ZA")} · Likes {c.likes} · Clicks {c.clicks}
               </div>
-              <button className="crm-b crm-b--g" style={{ marginTop: 10, fontSize: 12 }}
-                onClick={() => setEditingMetric(c)}>Log metrics</button>
+              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                <button className="crm-b crm-b--g" style={{ fontSize: 12 }}
+                  onClick={() => setEditingMetric(c)}>Log metrics</button>
+                {c.status !== "Published" && ["Facebook", "Instagram", "LinkedIn", "TikTok"].includes(c.platform) && (
+                  <button className="crm-b" style={{ fontSize: 12 }}
+                    disabled={publishing === c.id}
+                    onClick={() => publish(c)}>
+                    {publishing === c.id ? "Publishing…" : "Publish"}
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>

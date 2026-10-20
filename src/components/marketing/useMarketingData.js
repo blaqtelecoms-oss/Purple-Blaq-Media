@@ -5,7 +5,7 @@ const TABLES = [
   "marketing_leads", "campaigns", "content_items", "email_messages",
   "email_campaigns", "marketing_tasks", "brand_assets", "testimonials",
   "competitors", "marketing_budgets", "integration_connections",
-  "clients", "projects",
+  "clients", "projects", "team_members", "transactions",
 ];
 
 export function useMarketingData() {

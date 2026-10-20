@@ -40,6 +40,7 @@ export default function MarketingIntegrations({ data, reload }) {
 
   const resendConn = conn("resend");
   const websiteFormUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/marketing-form-webhook`;
+  const whatsappWebhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-webhook`;
 
   return (
     <>
@@ -64,6 +65,15 @@ export default function MarketingIntegrations({ data, reload }) {
         </p>
         <code style={{ display: "block", background: "var(--bg)", padding: 12, borderRadius: 10, wordBreak: "break-all", fontSize: 13 }}>{websiteFormUrl}</code>
         <p style={{ color: "var(--mut)", fontSize: 12, marginTop: 8 }}>POST with JSON: name, email, phone, message, utm_source, utm_campaign.</p>
+      </div>
+
+      <div className="crm-card" style={{ marginBottom: 18 }}>
+        <h3>WhatsApp webhook</h3>
+        <p style={{ color: "var(--mut)", fontSize: 13, lineHeight: 1.6 }}>
+          In Meta Business Manager, add this URL as your WhatsApp webhook. Incoming messages become leads with source "WhatsApp":
+        </p>
+        <code style={{ display: "block", background: "var(--bg)", padding: 12, borderRadius: 10, wordBreak: "break-all", fontSize: 13 }}>{whatsappWebhookUrl}</code>
+        <p style={{ color: "var(--mut)", fontSize: 12, marginTop: 8 }}>Set the verify token to match WHATSAPP_VERIFY_TOKEN. Subscribe to the "messages" field.</p>
       </div>
 
       <div className="crm-grid crm-k3">

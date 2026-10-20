@@ -434,3 +434,21 @@ verify_jwt = true
 
 [functions.sync-inbox]
 verify_jwt = true
+
+[functions.ga4-metrics]
+verify_jwt = true
+
+[functions.gsc-keywords]
+verify_jwt = true
+
+[functions.whatsapp-webhook]
+verify_jwt = false
+
+[functions.social-publish]
+verify_jwt = true
+
+[functions.ads-spend-sync]
+verify_jwt = true
+
+[functions.calendar-sync]
+verify_jwt = true
