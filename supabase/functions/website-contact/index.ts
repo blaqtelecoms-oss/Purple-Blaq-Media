@@ -60,7 +60,7 @@ Deno.serve(async (request) => {
 
     const resendKey = Deno.env.get("RESEND_API_KEY");
     const from = Deno.env.get("CONTACT_FROM_EMAIL");
-    const to = Deno.env.get("CONTACT_NOTIFICATION_EMAIL") || "deon@blaqmedia.co.za";
+    const to = Deno.env.get("CONTACT_NOTIFICATION_EMAIL") || "sales@purpleblaq.co.za";
     if (resendKey && from) {
       try {
         const emailResponse = await fetch("https://api.resend.com/emails", {
