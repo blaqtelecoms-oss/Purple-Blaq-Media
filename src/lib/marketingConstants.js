@@ -39,7 +39,8 @@ export const INTEGRATIONS = [
 ];
 
 export const RESEND_CHECKLIST = [
-  "Verify purpleblaq.co.za in Resend (add the SPF and DKIM records it gives).",
+  "Add a TXT record on purpleblaq.co.za (root) with value: v=spf1 include:rsend.purpleblaq.co.za ~all — this is the SPF record that authorises Resend to send for your domain. Without it, emails land in spam.",
+  "DKIM (resend._domainkey) and CNAME records (rsend / send) are already verified in Resend.",
   "Add the MX record Resend provides on a receiving subdomain such as inbound.purpleblaq.co.za.",
   "In your current mail provider, forward sales@purpleblaq.co.za to the Resend inbound address on that subdomain.",
   "In Resend, add a webhook for the email.received event pointing to the resend-inbound-webhook function URL.",
