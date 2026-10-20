@@ -37,6 +37,11 @@ Deno.serve(async (request) => {
           text: enquiry.message || "",
           timestamp: enquiry.created_date || new Date().toISOString(),
         }],
+        source_data: {
+          phone: enquiry.phone || null,
+          company: enquiry.company || null,
+          enquiry_type: enquiry.enquiry_type || subject,
+        },
       });
       if (error) throw error;
       existing.add(key);

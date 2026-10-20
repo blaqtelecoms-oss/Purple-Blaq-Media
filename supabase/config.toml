@@ -422,3 +422,36 @@ verify_jwt = false
 
 [functions.migrate-enquiries]
 verify_jwt = false
+
+[functions.marketing-form-webhook]
+verify_jwt = false
+
+[functions.resend-inbound-webhook]
+verify_jwt = false
+
+[functions.send-marketing-email]
+verify_jwt = true
+
+[functions.sync-inbox]
+verify_jwt = true
+
+[functions.ga4-metrics]
+verify_jwt = true
+
+[functions.gsc-keywords]
+verify_jwt = true
+
+[functions.whatsapp-webhook]
+verify_jwt = false
+
+[functions.social-publish]
+verify_jwt = true
+
+[functions.ads-spend-sync]
+verify_jwt = true
+
+[functions.calendar-sync]
+verify_jwt = true
+
+[functions.google-oauth]
+verify_jwt = false

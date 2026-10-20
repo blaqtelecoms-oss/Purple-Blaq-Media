@@ -5,6 +5,7 @@ export const ROUTE_ACCESS = {
   dashboard: ["Admin", "Finance", "Development", "Marketing", "Support"],
   clients: ["Admin", "Finance", "Development", "Marketing"],
   projects: ["Admin", "Finance", "Development", "Marketing"],
+  marketing: ["Admin", "Marketing"],
   team: ["Admin"],
   finance: ["Admin", "Finance"],
   support: ["Admin", "Support"],

@@ -15,8 +15,8 @@ const SLIDES = [
     cta: { label: "Explore services", to: "/services" },
   },
   {
-    src: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1600&q=80",
-    alt: "Operations team reviewing a central workflow dashboard on a laptop",
+    src: "https://images.unsplash.com/photo-1739298061740-5ed03045b280?auto=format&fit=crop&w=1600&q=80",
+    alt: "Black professionals collaborating around a table reviewing a workflow dashboard",
     audience: "For operations & admin teams",
     title: "One Dashboard for <em>Every Workflow</em>",
     message:
@@ -24,8 +24,8 @@ const SLIDES = [
     cta: { label: "See workflow systems", to: "/services" },
   },
   {
-    src: "https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=1600&q=80",
-    alt: "Growing business team collaborating around digital tools",
+    src: "https://images.unsplash.com/photo-1739303987830-ca19742b19bc?auto=format&fit=crop&w=1600&q=80",
+    alt: "Black business team collaborating with laptops as they grow",
     audience: "For growing businesses",
     title: "Systems That <em>Scale With You</em>",
     message:
@@ -33,8 +33,8 @@ const SLIDES = [
     cta: { label: "See how we help", to: "/services" },
   },
   {
-    src: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1600&q=80",
-    alt: "Team reviewing paper documents to digitise a business process",
+    src: "https://images.unsplash.com/photo-1641759191629-cc107016e78a?auto=format&fit=crop&w=1600&q=80",
+    alt: "Black professionals reviewing documents and digitising a business process on a laptop",
     audience: "For paper-heavy organisations",
     title: "From Paper to <em>Process</em>",
     message:
@@ -82,7 +82,7 @@ export default function Hero() {
             src={s.src}
             alt={i === active ? s.alt : ""}
             aria-hidden={i !== active}
-            className={`pb-hero__art ${i === active ? "on" : ""}`}
+            className={`pb-hero__art ${i === active ? "on" : ""}${i !== 0 ? " pb-hero__art--blend" : ""}`}
           />
         ))}
       </div>

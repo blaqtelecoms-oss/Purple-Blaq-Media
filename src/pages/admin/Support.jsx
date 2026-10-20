@@ -10,6 +10,7 @@ export default function Support() {
   const { member } = useCrm();
   const navigate = useNavigate();
   const [tickets, setTickets] = useState(null);
+  const [enquiries, setEnquiries] = useState([]);
   const [team, setTeam] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [reply, setReply] = useState("");
@@ -31,6 +32,15 @@ export default function Support() {
     } catch (error) {
       setTickets([]);
       setLoadError(error.message || "Could not load support data.");
+      return;
+    }
+    // Enquiries hold the full contact-form details (phone, company). They are
+    // Admin-only under RLS, so load them best-effort: non-Admin viewers simply
+    // won't see the extra pills, but tickets still load.
+    try {
+      setEnquiries(await listRecords("enquiries"));
+    } catch {
+      setEnquiries([]);
     }
   }, [selectedId]);
 
@@ -46,6 +56,24 @@ export default function Support() {
   const canManage = canManageSupport(member?.role);
   const ticket = tickets?.find((t) => t.id === selectedId);
   const assignable = team.filter((m) => m.role === "Support" || m.role === "Admin");
+
+  // Resolve the full contact-form details for the selected ticket. New tickets
+  // carry phone/company in source_data; older ones fall back to the matching
+  // enquiry (same email + subject) so admins always see what the visitor sent.
+  const details = (() => {
+    const src = ticket?.source_data || {};
+    if (src.phone || src.company || src.enquiry_type) {
+      return { phone: src.phone, company: src.company, enquiryType: src.enquiry_type };
+    }
+    const match = enquiries.find(
+      (e) =>
+        e.email?.toLowerCase() === ticket?.sender_email?.toLowerCase() &&
+        (e.enquiry_type || "General enquiry") === ticket?.subject
+    );
+    return match
+      ? { phone: match.phone, company: match.company, enquiryType: match.enquiry_type }
+      : {};
+  })();
 
   const sendReply = async () => {
     const v = reply.trim();
@@ -139,6 +167,23 @@ export default function Support() {
                   <small style={{ color: "var(--mut)" }}>
                     {ticket.sender_name} · {ticket.sender_email} · via website contact form
                   </small>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 8 }}>
+                    {details.phone && (
+                      <span className="crm-pill" title="Phone">
+                        ☎ {details.phone}
+                      </span>
+                    )}
+                    {details.company && (
+                      <span className="crm-pill" title="Company">
+                        🏢 {details.company}
+                      </span>
+                    )}
+                    {details.enquiryType && details.enquiryType !== ticket.subject && (
+                      <span className="crm-pill" title="Enquiry type">
+                        {details.enquiryType}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 {canManage && (
                   <div className="crm-row">
