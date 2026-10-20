@@ -816,9 +816,12 @@ footer.pb-footer .pb-bar {
 .pb-hero__slides { position: absolute; inset: 0; z-index: 0; }
 .pb-hero__slides .pb-hero__art { opacity: 0; transition: opacity 1.1s ease; }
 .pb-hero__slides .pb-hero__art.on { opacity: 1; }
+.pb-hero__slides .pb-hero__art--blend.on { opacity: 0.78; }
 .pb-hero__scrim--dark {
   position: absolute; inset: 0; z-index: 1; pointer-events: none;
-  background: linear-gradient(90deg, rgba(22,18,28,.82) 0%, rgba(22,18,28,.55) 45%, rgba(22,18,28,.12) 100%);
+  background:
+    linear-gradient(90deg, rgba(22,18,28,.86) 0%, rgba(22,18,28,.60) 48%, rgba(22,18,28,.34) 100%),
+    linear-gradient(180deg, rgba(22,18,28,.10) 0%, rgba(22,18,28,.34) 100%);
   opacity: 0; transition: opacity 1.1s ease;
 }
 .pb-hero__scrim--dark.on { opacity: 1; }

@@ -2,7 +2,7 @@
 export const LOGO_URL =
   "/assets/media/5e6eb535b_pb-logo1.png";
 export const HERO_BG_URL =
-  "https://images.unsplash.com/photo-1573496130141-209d200cebd8?auto=format&fit=crop&w=1600&q=80";
+  "/assets/media/e3ad09c29_pb-hero-bg1.jpg";
 
 export const CONTACT = {
   location: "Vanderbijlpark, Gauteng, South Africa",

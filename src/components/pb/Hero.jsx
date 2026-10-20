@@ -82,7 +82,7 @@ export default function Hero() {
             src={s.src}
             alt={i === active ? s.alt : ""}
             aria-hidden={i !== active}
-            className={`pb-hero__art ${i === active ? "on" : ""}`}
+            className={`pb-hero__art ${i === active ? "on" : ""}${i !== 0 ? " pb-hero__art--blend" : ""}`}
           />
         ))}
       </div>
