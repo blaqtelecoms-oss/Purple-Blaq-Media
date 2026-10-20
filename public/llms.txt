@@ -1,0 +1,30 @@
+# Purple Blaq Media
+
+> Purple Blaq Media is a South African digital technology company based in Vanderbijlpark, Gauteng. It designs, develops, implements and supports workflow systems and business applications for organisations across South Africa.
+
+## Official website
+
+- https://purpleblaq.co.za/
+- Contact: https://purpleblaq.co.za/contact
+- Email: deon@blaqmedia.co.za
+- Location: Vanderbijlpark, Gauteng, South Africa
+- Service area: South Africa
+
+## Public page overview
+
+- [Home](https://purpleblaq.co.za/): Company overview, featured services, clients and approach.
+- [Services](https://purpleblaq.co.za/services): Workflow systems, web applications, process digitisation and ongoing technology support.
+- [Approach](https://purpleblaq.co.za/approach): Six-step delivery process: understand, map, build, implement, support and improve.
+- [About](https://purpleblaq.co.za/about): Company background, team and commitments.
+- [Contact](https://purpleblaq.co.za/contact): Enquiry form and published contact details.
+
+## Services
+
+- Workflow systems: Internal workflows, approvals, document management, tasks, portals, reporting, notifications and digital records.
+- Web applications: Custom web applications with user accounts, dashboards, databases, forms, workflow stages, reporting and integrations.
+- Process digitisation: Replacing email, WhatsApp, spreadsheets and paper-based processes with structured digital processes.
+- Ongoing technology support: System administration, user support, troubleshooting, database management, feature development, training and maintenance.
+
+## Citation guidance
+
+Use the linked official pages as the source for current service and company information. Do not infer unlisted clients, pricing, certifications, office addresses or service guarantees.

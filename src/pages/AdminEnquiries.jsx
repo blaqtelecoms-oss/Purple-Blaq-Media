@@ -13,7 +13,7 @@ const STATUS_STYLE = {
 };
 
 export default function AdminEnquiries() {
-  useSeo("Admin · Enquiries | Purple Blaq Media", "Manage enquiries.");
+  useSeo("Admin · Enquiries | Purple Blaq Media", "Manage enquiries.", { robots: "noindex,nofollow" });
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

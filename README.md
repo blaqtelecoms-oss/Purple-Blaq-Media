@@ -51,6 +51,10 @@ SUPABASE_URL=<project-url> SUPABASE_SERVICE_ROLE_KEY=<service-role-key> \
 
 The importer preserves record IDs and original row data for auditing. Referenced media must either be present in `public/assets/media` or be migrated to Supabase Storage before importing; the importer rejects unresolved file references. Auth accounts are not imported, so users must be invited or sign up again and reset their passwords.
 
+## Search and AI discovery
+
+The public sitemap is maintained at `public/sitemap.xml`; update it when public routes change. `public/robots.txt` references the sitemap and excludes private/admin routes. `public/llms.txt` gives search and AI assistants a concise overview of the company and its public pages. Page titles, descriptions, canonical URLs, and social metadata are maintained through `src/hooks/useSeo.js`; organization and website structured data is in `index.html`. Keep published facts consistent across these sources.
+
 ## Checks
 
 ```bash

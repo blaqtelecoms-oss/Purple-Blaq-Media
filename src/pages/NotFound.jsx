@@ -5,7 +5,8 @@ import { LOGO_URL } from "@/lib/pbConstants";
 export default function NotFound() {
   useSeo(
     "Page not found | Purple Blaq Media",
-    "The page you were looking for could not be found."
+    "The page you were looking for could not be found.",
+    { robots: "noindex,follow" }
   );
   return (
     <div
