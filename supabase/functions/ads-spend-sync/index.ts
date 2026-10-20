@@ -1,5 +1,6 @@
 import { authorizeCrmRequest } from "../_shared/auth.ts";
 import { jsonResponse, optionsResponse } from "../_shared/cors.ts";
+import { getGoogleAccessToken } from "../_shared/google-oauth.ts";
 
 /**
  * Phase 3: Sync real ad spend from Google Ads and Meta Ads into campaign records.
@@ -10,35 +11,6 @@ import { jsonResponse, optionsResponse } from "../_shared/cors.ts";
  *               GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY
  *   Meta Ads:   META_ADS_ACCESS_TOKEN, META_AD_ACCOUNT_ID
  */
-
-async function getGoogleAccessToken(clientEmail: string, privateKey: string): Promise<string> {
-  const now = Math.floor(Date.now() / 1000);
-  const exp = now + 3600;
-  const header = { alg: "RS256", typ: "JWT" };
-  const payload = {
-    iss: clientEmail,
-    scope: "https://www.googleapis.com/auth/adwords",
-    aud: "https://oauth2.googleapis.com/token",
-    exp,
-    iat: now,
-  };
-  const b64url = (obj: unknown) =>
-    btoa(JSON.stringify(obj)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  const unsigned = `${b64url(header)}.${b64url(payload)}`;
-  const pemBody = privateKey.replace(/-----BEGIN PRIVATE KEY-----/, "").replace(/-----END PRIVATE KEY-----/, "").replace(/\s/g, "");
-  const der = Uint8Array.from(atob(pemBody), (c) => c.charCodeAt(0));
-  const key = await crypto.subtle.importKey("pkcs8", der, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
-  const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(unsigned));
-  const sigB64 = btoa(String.fromCharCode(...new Uint8Array(signature))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  const jwt = `${unsigned}.${sigB64}`;
-  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: jwt }),
-  });
-  if (!tokenRes.ok) throw new Error("Google auth failed");
-  return (await tokenRes.json()).access_token;
-}
 
 async function syncMetaAds(supabase: ReturnType<typeof Object>, since: string): Promise<number> {
   const token = Deno.env.get("META_ADS_ACCESS_TOKEN");
@@ -91,11 +63,14 @@ async function syncMetaAds(supabase: ReturnType<typeof Object>, since: string): 
 async function syncGoogleAds(supabase: ReturnType<typeof Object>, since: string): Promise<number> {
   const devToken = Deno.env.get("GOOGLE_ADS_DEVELOPER_TOKEN");
   const customerId = Deno.env.get("GOOGLE_ADS_CUSTOMER_ID");
-  const clientEmail = Deno.env.get("GOOGLE_CLIENT_EMAIL");
-  const privateKey = Deno.env.get("GOOGLE_PRIVATE_KEY");
-  if (!devToken || !customerId || !clientEmail || !privateKey) return 0;
+  if (!devToken || !customerId) return 0;
 
-  const accessToken = await getGoogleAccessToken(clientEmail, privateKey);
+  let accessToken: string;
+  try {
+    accessToken = await getGoogleAccessToken(supabase as never);
+  } catch {
+    return 0;
+  }
 
   const gaqlQuery = `SELECT campaign.name, campaign.id, metrics.cost FROM campaign WHERE segments.date >= '${since}' AND segments.date <= '${new Date().toISOString().slice(0, 10)}'`;
   const res = await fetch(

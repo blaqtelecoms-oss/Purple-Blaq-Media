@@ -1,41 +1,13 @@
 import { authorizeCrmRequest } from "../_shared/auth.ts";
 import { jsonResponse, optionsResponse } from "../_shared/cors.ts";
+import { getGoogleAccessToken } from "../_shared/google-oauth.ts";
 
 /**
- * Phase 2: Fetch top keywords, impressions, and click data from Google Search Console.
- * Uses the same Google service account as GA4.
+ * Fetch top keywords, impressions, and click data from Google Search Console.
+ * Uses Google OAuth — connect your account on the Integrations tab.
  *
- * Required secrets: GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY, GSC_SITE_URL
+ * Required secrets: GSC_SITE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
  */
-
-async function getGoogleAccessToken(clientEmail: string, privateKey: string): Promise<string> {
-  const now = Math.floor(Date.now() / 1000);
-  const exp = now + 3600;
-  const header = { alg: "RS256", typ: "JWT" };
-  const payload = {
-    iss: clientEmail,
-    scope: "https://www.googleapis.com/auth/webmasters.readonly",
-    aud: "https://oauth2.googleapis.com/token",
-    exp,
-    iat: now,
-  };
-  const b64url = (obj: unknown) =>
-    btoa(JSON.stringify(obj)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  const unsigned = `${b64url(header)}.${b64url(payload)}`;
-  const pemBody = privateKey.replace(/-----BEGIN PRIVATE KEY-----/, "").replace(/-----END PRIVATE KEY-----/, "").replace(/\s/g, "");
-  const der = Uint8Array.from(atob(pemBody), (c) => c.charCodeAt(0));
-  const key = await crypto.subtle.importKey("pkcs8", der, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
-  const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(unsigned));
-  const sigB64 = btoa(String.fromCharCode(...new Uint8Array(signature))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  const jwt = `${unsigned}.${sigB64}`;
-  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: jwt }),
-  });
-  if (!tokenRes.ok) throw new Error("Google auth failed");
-  return (await tokenRes.json()).access_token;
-}
 
 Deno.serve(async (request: Request) => {
   if (request.method === "OPTIONS") return optionsResponse();
@@ -43,25 +15,31 @@ Deno.serve(async (request: Request) => {
 
   const auth = await authorizeCrmRequest(request, ["Admin", "Marketing"]);
   if (auth instanceof Response) return auth;
+  const { client: supabase } = auth;
 
-  const clientEmail = Deno.env.get("GOOGLE_CLIENT_EMAIL");
-  const privateKey = Deno.env.get("GOOGLE_PRIVATE_KEY");
   const siteUrl = Deno.env.get("GSC_SITE_URL");
-
-  if (!clientEmail || !privateKey || !siteUrl) {
+  if (!siteUrl) {
     return jsonResponse({
-      error: "Search Console is not configured. Set GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY, and GSC_SITE_URL as Supabase secrets.",
+      error: "Search Console is not configured. Set GSC_SITE_URL and connect your Google account on the Integrations tab.",
       configured: false,
     }, 400);
   }
 
   try {
+    let accessToken: string;
+    try {
+      accessToken = await getGoogleAccessToken(supabase);
+    } catch {
+      return jsonResponse({
+        error: "Google account is not connected. Connect it on the Integrations tab.",
+        configured: false,
+      }, 400);
+    }
+
     const body = await request.json().catch(() => ({}));
     const days = Math.min(Number(body?.days) || 28, 90);
     const endDate = new Date().toISOString().slice(0, 10);
     const startDate = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
-
-    const accessToken = await getGoogleAccessToken(clientEmail, privateKey);
 
     // Fetch top queries (keywords)
     const queriesRes = await fetch(

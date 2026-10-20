@@ -1,42 +1,15 @@
 import { authorizeCrmRequest } from "../_shared/auth.ts";
 import { jsonResponse, optionsResponse } from "../_shared/cors.ts";
+import { getGoogleAccessToken } from "../_shared/google-oauth.ts";
 
 /**
- * Phase 3: Sync scheduled content items to Google Calendar.
+ * Sync scheduled content items to Google Calendar.
  * Creates a calendar event for each content item with status "Scheduled" that
  * doesn't yet have a calendar event ID. Removes events for items no longer scheduled.
  *
- * Required secrets: GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY, GOOGLE_CALENDAR_ID
+ * Uses Google OAuth — connect your account on the Integrations tab.
+ * Required secrets: GOOGLE_CALENDAR_ID, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
  */
-
-async function getGoogleAccessToken(clientEmail: string, privateKey: string): Promise<string> {
-  const now = Math.floor(Date.now() / 1000);
-  const exp = now + 3600;
-  const header = { alg: "RS256", typ: "JWT" };
-  const payload = {
-    iss: clientEmail,
-    scope: "https://www.googleapis.com/auth/calendar",
-    aud: "https://oauth2.googleapis.com/token",
-    exp,
-    iat: now,
-  };
-  const b64url = (obj: unknown) =>
-    btoa(JSON.stringify(obj)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  const unsigned = `${b64url(header)}.${b64url(payload)}`;
-  const pemBody = privateKey.replace(/-----BEGIN PRIVATE KEY-----/, "").replace(/-----END PRIVATE KEY-----/, "").replace(/\s/g, "");
-  const der = Uint8Array.from(atob(pemBody), (c) => c.charCodeAt(0));
-  const key = await crypto.subtle.importKey("pkcs8", der, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
-  const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(unsigned));
-  const sigB64 = btoa(String.fromCharCode(...new Uint8Array(signature))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  const jwt = `${unsigned}.${sigB64}`;
-  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: jwt }),
-  });
-  if (!tokenRes.ok) throw new Error("Google auth failed");
-  return (await tokenRes.json()).access_token;
-}
 
 Deno.serve(async (request: Request) => {
   if (request.method === "OPTIONS") return optionsResponse();
@@ -46,19 +19,24 @@ Deno.serve(async (request: Request) => {
   if (auth instanceof Response) return auth;
   const { client: supabase } = auth;
 
-  const clientEmail = Deno.env.get("GOOGLE_CLIENT_EMAIL");
-  const privateKey = Deno.env.get("GOOGLE_PRIVATE_KEY");
   const calendarId = Deno.env.get("GOOGLE_CALENDAR_ID");
-
-  if (!clientEmail || !privateKey || !calendarId) {
+  if (!calendarId) {
     return jsonResponse({
-      error: "Google Calendar is not configured. Set GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY, and GOOGLE_CALENDAR_ID as Supabase secrets.",
+      error: "Google Calendar is not configured. Set GOOGLE_CALENDAR_ID and connect your Google account on the Integrations tab.",
       configured: false,
     }, 400);
   }
 
   try {
-    const accessToken = await getGoogleAccessToken(clientEmail, privateKey);
+    let accessToken: string;
+    try {
+      accessToken = await getGoogleAccessToken(supabase);
+    } catch {
+      return jsonResponse({
+        error: "Google account is not connected. Connect it on the Integrations tab.",
+        configured: false,
+      }, 400);
+    }
 
     // Fetch all content items that are scheduled or published with a publish date
     const { data: items, error } = await supabase

@@ -1,12 +1,34 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/utils/supabase";
 import { createRecord, updateRecord } from "@/api/data";
 import { INTEGRATIONS, RESEND_CHECKLIST } from "@/lib/marketingConstants";
+
+const GOOGLE_INTEGRATION_KEYS = ["google", "ga4", "gsc", "gcal", "gads", "drive"];
 
 export default function MarketingIntegrations({ data, reload }) {
   const connections = data.integration_connections || [];
   const [busy, setBusy] = useState("");
+  const [oauthMsg, setOauthMsg] = useState(null);
 
   const conn = (key) => connections.find((c) => c.key === key);
+  const googleConn = conn("google");
+  const googleConnected = googleConn?.status === "connected";
+
+  // Check for OAuth redirect result (?google=connected|error)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("google");
+    if (status === "connected") {
+      setOauthMsg({ ok: true, text: "Google account connected successfully." });
+    } else if (status === "error") {
+      setOauthMsg({ ok: false, text: "Could not connect Google. Please try again." });
+    }
+    if (status) {
+      params.delete("google");
+      const qs = params.toString();
+      window.history.replaceState({}, "", qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
+    }
+  }, []);
 
   const toggle = async (integration) => {
     setBusy(integration.key);
@@ -38,12 +60,61 @@ export default function MarketingIntegrations({ data, reload }) {
     }
   };
 
+  const connectGoogle = async () => {
+    setBusy("google");
+    setOauthMsg(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-oauth`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token || ""}` },
+      });
+      const result = await res.json();
+      if (result.authUrl) {
+        window.location.href = result.authUrl;
+      } else {
+        alert(result.error || "Could not start Google OAuth.");
+      }
+    } catch (err) {
+      alert(err.message || "Could not connect Google.");
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const disconnectGoogle = async () => {
+    setBusy("google");
+    try {
+      for (const key of GOOGLE_INTEGRATION_KEYS) {
+        const existing = conn(key);
+        if (existing) {
+          await updateRecord("integration_connections", existing.id, {
+            status: "disconnected",
+            connected_at: null,
+            source_data: {},
+          });
+        }
+      }
+      await reload();
+    } catch (err) {
+      alert(err.message || "Could not disconnect Google.");
+    } finally {
+      setBusy("");
+    }
+  };
+
   const resendConn = conn("resend");
   const websiteFormUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/marketing-form-webhook`;
   const whatsappWebhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-webhook`;
 
   return (
     <>
+      {oauthMsg && (
+        <div className="crm-card" style={{ marginBottom: 18, borderColor: oauthMsg.ok ? "var(--ok)" : "var(--warn)" }}>
+          <p style={{ margin: 0, color: oauthMsg.ok ? "var(--ok)" : "var(--warn)" }}>{oauthMsg.text}</p>
+        </div>
+      )}
+
       <div className="crm-card" style={{ marginBottom: 18 }}>
         <h3 style={{ display: "flex", justifyContent: "space-between" }}>
           Resend setup checklist
@@ -76,11 +147,46 @@ export default function MarketingIntegrations({ data, reload }) {
         <p style={{ color: "var(--mut)", fontSize: 12, marginTop: 8 }}>Set the verify token to match WHATSAPP_VERIFY_TOKEN. Subscribe to the "messages" field.</p>
       </div>
 
+      {/* Google OAuth — one connection enables GA4, GSC, Calendar, Ads and Drive */}
+      <div className="crm-card" style={{ marginBottom: 18 }}>
+        <h3 style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          Google Workspace
+          {googleConnected
+            ? <span className="crm-pill ok">Connected</span>
+            : <span className="crm-pill">Not connected</span>}
+        </h3>
+        <p style={{ color: "var(--mut)", fontSize: 13, margin: "0 0 8px", lineHeight: 1.5 }}>
+          Connect once with Google OAuth to enable Analytics 4, Search Console, Calendar, Ads and Drive. No service-account keys needed — you authorise access through your Google account.
+        </p>
+        {googleConnected && googleConn?.source_data?.connected_email && (
+          <p style={{ color: "var(--mut)", fontSize: 12, margin: "0 0 8px" }}>
+            Connected as {googleConn.source_data.connected_email}
+          </p>
+        )}
+        <div style={{ marginTop: 10 }}>
+          {googleConnected ? (
+            <button className="crm-b" disabled={busy === "google"} onClick={disconnectGoogle}>
+              {busy === "google" ? "…" : "Disconnect Google"}
+            </button>
+          ) : (
+            <button className="crm-b crm-b--g" disabled={busy === "google"} onClick={connectGoogle}>
+              {busy === "google" ? "…" : "Connect with Google"}
+            </button>
+          )}
+        </div>
+        {!googleConnected && (
+          <p style={{ color: "var(--warn)", fontSize: 11, marginTop: 8 }}>
+            Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET as secrets, then connect your Google account.
+          </p>
+        )}
+      </div>
+
       <div className="crm-grid crm-k3">
         {INTEGRATIONS.map((i) => {
           const c = conn(i.key);
-          const connected = c?.status === "connected";
-          const needsSetup = c?.status === "needs_setup";
+          const isGoogle = i.oauth === "google";
+          const connected = isGoogle ? googleConnected : c?.status === "connected";
+          const needsSetup = !isGoogle && c?.status === "needs_setup";
           return (
             <div className="crm-card" key={i.key}>
               <h3 style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -91,16 +197,22 @@ export default function MarketingIntegrations({ data, reload }) {
               </h3>
               <p style={{ color: "var(--mut)", fontSize: 13, margin: "0 0 8px", lineHeight: 1.5 }}>{i.description}</p>
               <span className="crm-pill">Used in {i.usedIn}</span>
-              {i.phase > 1 && !connected && (
+              {i.phase > 1 && !connected && !isGoogle && (
                 <p style={{ color: "var(--warn)", fontSize: 11, marginTop: 8 }}>
                   Phase {i.phase} — needs credentials and app approval. {i.label.includes("Meta") || i.label.includes("LinkedIn") || i.label.includes("TikTok") ? "App review required." : "Ask for credentials."}
                 </p>
               )}
               <div style={{ marginTop: 10 }}>
-                <button className="crm-b crm-b--g" disabled={busy === i.key}
-                  onClick={() => toggle(i)}>
-                  {busy === i.key ? "…" : connected ? "Disconnect" : needsSetup ? "Mark needs setup" : "Connect"}
-                </button>
+                {isGoogle ? (
+                  <span style={{ color: "var(--mut)", fontSize: 12 }}>
+                    {connected ? "Managed by Google connection above" : "Connect Google above to enable"}
+                  </span>
+                ) : (
+                  <button className="crm-b crm-b--g" disabled={busy === i.key}
+                    onClick={() => toggle(i)}>
+                    {busy === i.key ? "…" : connected ? "Disconnect" : needsSetup ? "Mark needs setup" : "Connect"}
+                  </button>
+                )}
               </div>
             </div>
           );

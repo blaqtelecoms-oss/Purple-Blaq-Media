@@ -452,3 +452,6 @@ verify_jwt = true
 
 [functions.calendar-sync]
 verify_jwt = true
+
+[functions.google-oauth]
+verify_jwt = false

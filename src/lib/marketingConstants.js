@@ -26,16 +26,16 @@ export const INTEGRATIONS = [
   { key: "resend", label: "Resend", description: "Send and receive email as sales@purpleblaq.co.za", usedIn: "Email", phase: 1 },
   { key: "forms", label: "Website form webhooks", description: "New enquiries become leads instantly", usedIn: "Leads", phase: 1 },
   { key: "wa", label: "WhatsApp Business Cloud API", description: "Capture WhatsApp chats as leads", usedIn: "Leads", phase: 2 },
-  { key: "ga4", label: "Google Analytics 4", description: "Visitors, top pages and traffic sources", usedIn: "Overview", phase: 2 },
-  { key: "gsc", label: "Google Search Console", description: "Keywords, impressions and rankings", usedIn: "Overview", phase: 2 },
+  { key: "ga4", label: "Google Analytics 4", description: "Visitors, top pages and traffic sources", usedIn: "Overview", phase: 2, oauth: "google" },
+  { key: "gsc", label: "Google Search Console", description: "Keywords, impressions and rankings", usedIn: "Overview", phase: 2, oauth: "google" },
   { key: "meta", label: "Meta Graph API", description: "Publish to Facebook and Instagram, pull reach and likes", usedIn: "Social", phase: 3 },
   { key: "li", label: "LinkedIn API", description: "Publish posts, pull engagement", usedIn: "Social", phase: 3 },
   { key: "tt", label: "TikTok API", description: "Publish videos, pull views", usedIn: "Social", phase: 3 },
-  { key: "gads", label: "Google Ads API", description: "Real spend and leads per campaign", usedIn: "Campaigns", phase: 3 },
+  { key: "gads", label: "Google Ads API", description: "Real spend and leads per campaign", usedIn: "Campaigns", phase: 3, oauth: "google" },
   { key: "mads", label: "Meta Ads API", description: "Real spend and leads per campaign", usedIn: "Campaigns", phase: 3 },
-  { key: "drive", label: "Google Drive", description: "Asset library syncs with team files", usedIn: "Assets", phase: 3 },
+  { key: "drive", label: "Google Drive", description: "Asset library syncs with team files", usedIn: "Assets", phase: 3, oauth: "google" },
   { key: "canva", label: "Canva Connect", description: "Open and import designs", usedIn: "Assets", phase: 3 },
-  { key: "gcal", label: "Google Calendar", description: "Content calendar appears in team calendars", usedIn: "Calendar", phase: 3 },
+  { key: "gcal", label: "Google Calendar", description: "Content calendar appears in team calendars", usedIn: "Calendar", phase: 3, oauth: "google" },
 ];
 
 export const RESEND_CHECKLIST = [
