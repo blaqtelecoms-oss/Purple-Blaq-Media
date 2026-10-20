@@ -49,6 +49,7 @@ Deno.serve(async (request) => {
         subject: enquiryType || "General enquiry",
         status: "Open",
         messages: [{ from: "customer", text: message, timestamp: new Date().toISOString() }],
+        source_data: { phone, company, enquiry_type: enquiryType },
       })
       .select("id")
       .single();
